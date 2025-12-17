@@ -1,4 +1,4 @@
-# Daniel
+# Nexus
 
 Next.js 14 project with TypeScript, App Router, and modern tooling.
 
