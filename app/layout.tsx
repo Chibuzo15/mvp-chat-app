@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Nexus',
-  description: 'Next.js 14 App',
+  title: 'MVP AI Chat App',
+  description: 'AI Chat Application',
 }
 
 export default function RootLayout({

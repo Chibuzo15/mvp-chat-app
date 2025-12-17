@@ -1,6 +1,6 @@
-# Nexus
+# MVP AI Chat App
 
-Next.js 14 project with TypeScript, App Router, and modern tooling.
+Next.js 14 AI chat application with TypeScript, App Router, and modern tooling.
 
 ## Tech Stack
 
@@ -46,7 +46,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Project Structure
 
 ```
-web/
+app/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Auth route group
 │   ├── (dashboard)/       # Dashboard route group
