@@ -1,4 +1,4 @@
-# MVP AI Chat App
+# MVP Chat App
 
 Next.js 14 AI chat application with TypeScript, App Router, and modern tooling.
 
@@ -46,7 +46,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Project Structure
 
 ```
-app/
+mvp-chat-app/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Auth route group
 │   ├── (dashboard)/       # Dashboard route group
