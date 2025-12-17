@@ -17,5 +17,38 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  sentMessages     Message[]      @relation("SentMessages")
+  sessions1        ChatSession[]  @relation("User1Sessions")
+  sessions2        ChatSession[]  @relation("User2Sessions")
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user1    User      @relation("User1Sessions", fields: [user1Id], references: [id])
+  user2    User      @relation("User2Sessions", fields: [user2Id], references: [id])
+  messages Message[]
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  senderId  String
+  sessionId String
+  createdAt DateTime @default(now())
+
+  sender  User        @relation("SentMessages", fields: [senderId], references: [id])
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }
 
