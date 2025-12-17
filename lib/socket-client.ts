@@ -5,7 +5,9 @@ let socket: Socket | null = null
 export const getSocket = (): Socket => {
   if (!socket) {
     socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000', {
+      path: '/api/socketio',
       transports: ['websocket'],
+      autoConnect: false,
     })
   }
   return socket
