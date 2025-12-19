@@ -37,8 +37,7 @@ Real-time 1:1 chat built with **Next.js (App Router)**, **Socket.IO**, **Prisma*
   - server emits `presence-state`, `user-online`, `user-offline`
   - server supports multiple sockets per user (multi-tab)
 - Messages:
-  - `send-message` → server writes message → emits `receive-message` to the session room
-  - server also emits `new-session` to recipient so new conversations appear immediately
+  - `send-message` → server writes message → emits `receive-message` to all sockets of both participants (multi-tab / multi-device)
 - Typing:
   - `typing` → server emits `user-typing` to the session room
 

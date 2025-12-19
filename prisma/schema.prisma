@@ -29,6 +29,10 @@ model ChatSession {
   user2Id   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // Persisted read state (industry standard for unread counts across refresh/devices).
+  // Since sessions are strictly 1:1, we store lastReadAt for each participant directly on the session.
+  lastReadAtUser1 DateTime @default(now())
+  lastReadAtUser2 DateTime @default(now())
 
   user1    User      @relation("User1Sessions", fields: [user1Id], references: [id])
   user2    User      @relation("User2Sessions", fields: [user2Id], references: [id])

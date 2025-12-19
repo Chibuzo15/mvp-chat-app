@@ -37,6 +37,7 @@ interface Session {
   lastMessage?: string
   timestamp?: string
   unreadCount?: number
+  otherLastReadAt?: string
 }
 
 export default function ChatPage() {
@@ -65,6 +66,7 @@ export default function ChatPage() {
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [readUpToBySession, setReadUpToBySession] = useState<Record<string, string>>({})
   
   const socketRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -101,6 +103,8 @@ export default function ChatPage() {
     if (!socketRef.current) return
     if (!selectedSession?.id) return
     socketRef.current.emit('join-session', selectedSession.id)
+    // Mark as read whenever the user is actively viewing this session (covers initial auto-select too).
+    socketRef.current.emit('mark-read', { sessionId: selectedSession.id })
   }, [socketConnected, selectedSession])
 
   // Initialize app and socket
@@ -188,34 +192,23 @@ export default function ChatPage() {
           }
         })
 
-        socket.on('new-session', (sessionData: Session) => {
-          if (mounted) {
-            setSessions(prev => {
-              const exists = prev.some(s => s.id === sessionData.id)
-              if (exists) {
-                // Update existing session
-                return prev.map(s => 
-                  s.id === sessionData.id 
-                    ? { ...s, ...sessionData }
-                    : s
-                )
-              }
-              // Add new session to the top (but keep AI chat pinned)
-              const aiSession = prev.find(s => s.otherUser.email === 'ai@chat.app')
-              const otherSessions = prev.filter(s => s.otherUser.email !== 'ai@chat.app')
-              return aiSession 
-                ? [aiSession, sessionData, ...otherSessions]
-                : [sessionData, ...otherSessions]
-          })
-          }
-        })
-
         socket.on('receive-message', (message: Message) => {
           if (mounted) {
-            setMessages(prev => {
-              const withoutTemp = prev.filter(m => m.tempId !== message.tempId)
-              return [...withoutTemp, message]
-            })
+            // Only append to the open thread. We still update the conversation list/unread count below.
+            if (selectedSessionIdRef.current === message.sessionId) {
+              setMessages(prev => {
+                const withoutTemp = prev.filter(m => m.tempId !== message.tempId)
+                return [...withoutTemp, message]
+              })
+
+              // If this is an incoming message in the currently open session, mark it read immediately
+              // so the sender can see read-receipts without refresh.
+              const me = currentUserIdRef.current
+              const isIncoming = me ? message.senderId !== me : true
+              if (isIncoming && socketRef.current) {
+                socketRef.current.emit('mark-read', { sessionId: message.sessionId })
+              }
+            }
 
             // Clear typing state for the sender in this session.
             setTypingBySession((prev) => {
@@ -229,10 +222,10 @@ export default function ChatPage() {
               const idx = prev.findIndex(s => s.id === message.sessionId)
               
               // If session doesn't exist, we need to fetch it or create a placeholder
-              // This can happen if the user receives a message before the new-session event
+              // This can happen if the user receives a message before their sessions list is refreshed/loaded
               if (idx === -1) {
                 // Create a placeholder session from the message data
-                // The new-session event should arrive shortly, but this ensures we don't lose the message
+                // This ensures we don't lose the message in the UI.
                 const placeholderSession: Session = {
                   id: message.sessionId,
                   otherUser: message.sender,
@@ -240,11 +233,8 @@ export default function ChatPage() {
                   timestamp: message.createdAt,
                   unreadCount: selectedSessionIdRef.current === message.sessionId ? 0 : 1,
                 }
-                const aiSession = prev.find(s => s.otherUser.email === 'ai@chat.app')
-                const otherSessions = prev.filter(s => s.otherUser.email !== 'ai@chat.app')
-                return aiSession
-                  ? [aiSession, placeholderSession, ...otherSessions]
-                  : [placeholderSession, ...otherSessions]
+                // Add to top (most recent message), sorted by timestamp - no special AI pinning
+                return [placeholderSession, ...prev]
               }
 
               const session = prev[idx]
@@ -265,6 +255,27 @@ export default function ChatPage() {
             })
           }
         })
+
+        // Read-state sync:
+        // - If I read: clear unread across my tabs
+        // - If other user read: update tick marks for my outgoing messages (selected session)
+        socket.on(
+          'session-read',
+          ({ sessionId, readerId, readAt }: { sessionId: string; readerId?: string; readAt?: string }) => {
+            if (!mounted) return
+            if (!sessionId) return
+
+            const me = currentUserIdRef.current
+            if (me && readerId === me) {
+              setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, unreadCount: 0 } : s)))
+              return
+            }
+
+            if (readAt) {
+              setReadUpToBySession((prev) => ({ ...prev, [sessionId]: readAt }))
+            }
+          }
+        )
 
         socket.on(
           'user-typing',
@@ -374,12 +385,25 @@ export default function ChatPage() {
       const realSessions: Session[] = data.sessions || []
       setSessions(realSessions)
 
-      // Auto-select first session if none selected
+      // Seed read receipts state so additionally-opened tabs show correct ticks without needing a new event.
+      setReadUpToBySession((prev) => {
+        const next = { ...prev }
+        for (const s of realSessions) {
+          if (s?.id && s?.otherLastReadAt) next[s.id] = s.otherLastReadAt
+        }
+        return next
+      })
+
+      // Auto-select first session if none selected (only on desktop, md+ breakpoint = 768px)
+      // On mobile, default to showing the conversations list
       if (!selectedSession && !selectedUser && realSessions.length > 0) {
-        const firstSession = realSessions[0]
-        setSelectedSession(firstSession)
-        selectedSessionIdRef.current = firstSession.id
-        await loadMessages(firstSession.id)
+        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
+        if (isDesktop) {
+          const firstSession = realSessions[0]
+          setSelectedSession(firstSession)
+          selectedSessionIdRef.current = firstSession.id
+          await loadMessages(firstSession.id)
+        }
       }
     } catch (err) {
       console.error('Failed to fetch sessions:', err)
@@ -620,6 +644,12 @@ export default function ChatPage() {
   }
 
   const handleSelectSession = (session: Session) => {
+    // Leave previous room to prevent duplicate typing events over time.
+    const prevSessionId = selectedSessionIdRef.current
+    if (socketRef.current && prevSessionId && prevSessionId !== session.id) {
+      socketRef.current.emit('leave-session', prevSessionId)
+    }
+
     setSelectedSession(session)
     selectedSessionIdRef.current = session.id
     setSelectedUser(null)
@@ -629,14 +659,15 @@ export default function ChatPage() {
     setSwipedSession(null)
     
     // Clear unread count when opening a session
-    if (session.unreadCount && session.unreadCount > 0) {
-      setSessions(prev => prev.map(s => 
-        s.id === session.id ? { ...s, unreadCount: 0 } : s
-      ))
-    }
+    setSessions((prev) => prev.map((s) => (s.id === session.id ? { ...s, unreadCount: 0 } : s)))
     
     if (socketRef.current) {
       socketRef.current.emit('join-session', session.id)
+      socketRef.current.emit('mark-read', { sessionId: session.id })
+    }
+
+    if (session.otherLastReadAt) {
+      setReadUpToBySession((prev) => ({ ...prev, [session.id]: session.otherLastReadAt as string }))
     }
   }
 
@@ -875,6 +906,10 @@ export default function ChatPage() {
                     }
                     onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
                     onBack={() => {
+                      // Leaving the room prevents stale typing events if the user re-enters later.
+                      if (socketRef.current && selectedSessionIdRef.current) {
+                        socketRef.current.emit('leave-session', selectedSessionIdRef.current)
+                      }
                       setSelectedSession(null)
                       selectedSessionIdRef.current = null
                       setSelectedUser(null)
@@ -888,6 +923,7 @@ export default function ChatPage() {
                     <ChatMessages
                       messages={messages}
                       currentUserId={currentUserId}
+                      readUpTo={selectedSession?.id ? readUpToBySession[selectedSession.id] : undefined}
                       loadingMessages={loadingMessages}
                       messagesEndRef={messagesEndRef}
                       formatTime={formatTime}

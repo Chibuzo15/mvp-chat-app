@@ -171,6 +171,7 @@ interface Message {
 interface ChatMessagesProps {
   messages: Message[]
   currentUserId: string | null
+  readUpTo?: string
   loadingMessages: boolean
   messagesEndRef: RefObject<HTMLDivElement>
   formatTime: (date: string) => string
@@ -179,6 +180,7 @@ interface ChatMessagesProps {
 export function ChatMessages({ 
   messages, 
   currentUserId, 
+  readUpTo,
   loadingMessages,
   messagesEndRef,
   formatTime 
@@ -229,6 +231,12 @@ export function ChatMessages({
           {/* Messages */}
           {group.messages.map((message) => {
             const isOwn = message.senderId === currentUserId
+            const isRead =
+              !!readUpTo &&
+              !!currentUserId &&
+              isOwn &&
+              !message.tempId &&
+              new Date(message.createdAt).getTime() <= new Date(readUpTo).getTime()
             return (
               <div key={message.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} mb-4`}>
                 <div className={`max-w-[85%] sm:max-w-md rounded-2xl px-4 py-3 shadow-sm border border-gray-100 ${isOwn ? 'bg-[#F0FDF4]' : 'bg-white'}`}>
@@ -244,7 +252,10 @@ export function ChatMessages({
                     message.tempId ? (
                       <Check className="w-3.5 h-3.5 text-gray-400" strokeWidth={2} />
                     ) : (
-                      <CheckCheck className="w-3.5 h-3.5 text-[#2D9B98]" strokeWidth={2} />
+                      <CheckCheck
+                        className={`w-3.5 h-3.5 ${isRead ? 'text-[#2D9B98]' : 'text-gray-400'}`}
+                        strokeWidth={2}
+                      />
                     )
                   )}
                 </div>

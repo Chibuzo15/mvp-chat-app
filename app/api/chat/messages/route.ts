@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { emitToUserSockets } from '@/lib/socket-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,6 +54,21 @@ export async function GET(req: NextRequest) {
         createdAt: 'asc',
       },
     })
+
+    // Mark this session as read for the requesting user (persisted read state).
+    const now = new Date()
+    const isUser1 = session.user1Id === userId
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: isUser1 ? { lastReadAtUser1: now } : { lastReadAtUser2: now },
+    })
+
+    // Best-effort realtime read receipt: notify both participants' sockets.
+    // This fixes cases where the reader's socket isn't connected yet (API call still happens).
+    const otherUserId = session.user1Id === userId ? session.user2Id : session.user1Id
+    const payload = { sessionId, readerId: userId, readAt: now.toISOString() }
+    emitToUserSockets(userId, 'session-read', payload)
+    emitToUserSockets(otherUserId, 'session-read', payload)
 
     return NextResponse.json({ messages })
   } catch (error) {

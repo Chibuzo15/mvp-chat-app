@@ -144,6 +144,12 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Keep ChatSession ordering correct on refresh (sessions list uses updatedAt desc)
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: { updatedAt: new Date() },
+    })
+
     const recent = await prisma.message.findMany({
       where: { sessionId },
       orderBy: { createdAt: 'desc' },
@@ -231,6 +237,12 @@ export async function POST(req: NextRequest) {
       include: {
         sender: { select: { id: true, name: true, email: true } },
       },
+    })
+
+    // Update session timestamp again for the assistant message
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: { updatedAt: new Date() },
     })
 
     return NextResponse.json({ userMessage, assistantMessage })

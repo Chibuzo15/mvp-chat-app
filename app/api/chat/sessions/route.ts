@@ -57,21 +57,36 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    const formattedSessions = sessions.map(session => ({
-      id: session.id,
-      otherUser: session.user1Id === userId ? session.user2 : session.user1,
-      lastMessage: session.messages[0]?.content,
-      timestamp: session.messages[0]?.createdAt || session.createdAt,
-    }))
+    const formattedSessions = await Promise.all(
+      sessions.map(async (session) => {
+        const isUser1 = session.user1Id === userId
+        const lastReadAt = isUser1 ? session.lastReadAtUser1 : session.lastReadAtUser2
 
-    // Keep AI chat pinned at the top (even if it has no recent activity yet).
-    const sorted = formattedSessions.slice().sort((a, b) => {
-      const aIsAi = a.otherUser.email === 'ai@chat.app'
-      const bIsAi = b.otherUser.email === 'ai@chat.app'
-      if (aIsAi && !bIsAi) return -1
-      if (!aIsAi && bIsAi) return 1
-      // Otherwise keep server ordering (updatedAt desc) by not changing relative order.
-      return 0
+        const unreadCount = await prisma.message.count({
+          where: {
+            sessionId: session.id,
+            createdAt: { gt: lastReadAt },
+            // Only count incoming messages as unread
+            senderId: { not: userId },
+          },
+        })
+
+        return {
+          id: session.id,
+          otherUser: isUser1 ? session.user2 : session.user1,
+          lastMessage: session.messages[0]?.content,
+          timestamp: session.messages[0]?.createdAt || session.createdAt,
+          unreadCount,
+          otherLastReadAt: (isUser1 ? session.lastReadAtUser2 : session.lastReadAtUser1).toISOString(),
+        }
+      })
+    )
+
+    // Sort by last message time (most recent first), including AI chat
+    const sorted = formattedSessions.sort((a, b) => {
+      const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
+      const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
+      return timeB - timeA // Descending order (newest first)
     })
 
     return NextResponse.json({ sessions: sorted })
