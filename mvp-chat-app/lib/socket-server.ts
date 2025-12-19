@@ -13,10 +13,29 @@ const userSockets = new Map<string, Set<string>>()
 const isUserOnline = (userId: string) => (userSockets.get(userId)?.size || 0) > 0
 
 export function initializeSocket(httpServer: HTTPServer) {
+  console.log('[Socket] init', process.env.JWT_SECRET ? '(JWT_SECRET loaded)' : '(JWT_SECRET missing)')
+
   const io = new SocketIOServer(httpServer, {
     path: '/api/socketio',
     addTrailingSlash: false,
+    cors: {
+      origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      credentials: true,
+    },
   })
+
+  const extractCookie = (cookieHeader: unknown, name: string): string | null => {
+    if (typeof cookieHeader !== 'string' || !cookieHeader) return null
+    const parts = cookieHeader.split(';').map((p) => p.trim())
+    const match = parts.find((p) => p.startsWith(`${name}=`))
+    if (!match) return null
+    const raw = match.slice(name.length + 1).trim().replace(/^"|"$/g, '')
+    try {
+      return decodeURIComponent(raw)
+    } catch {
+      return raw
+    }
+  }
 
   io.use(async (socket, next) => {
     try {
@@ -24,12 +43,15 @@ export function initializeSocket(httpServer: HTTPServer) {
       let token = socket.handshake.auth.token
       
       // If not in auth, try to parse from cookies
-      if (!token && socket.handshake.headers.cookie) {
-        const cookies = socket.handshake.headers.cookie.split('; ')
-        const authCookie = cookies.find(c => c.startsWith('auth-token='))
-        if (authCookie) {
-          token = authCookie.split('=')[1]
-        }
+      if (!token) {
+        const cookieHeader =
+          // Most common
+          socket.handshake.headers?.cookie ??
+          // Some engines expose headers here
+          (socket.request as any)?.headers?.cookie
+
+        const fromCookie = extractCookie(cookieHeader, 'auth-token')
+        if (fromCookie) token = fromCookie
       }
       
       if (!token) {

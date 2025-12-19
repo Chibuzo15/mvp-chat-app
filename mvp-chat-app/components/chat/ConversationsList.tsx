@@ -1,7 +1,7 @@
 'use client'
 
-import { Plus, Search, MessageSquare, Archive, CheckCheck, Filter, Users } from 'lucide-react'
-import { RefObject, useMemo, useState } from 'react'
+import { Plus, Search, MessageSquare, Archive, CheckCheck, Filter } from 'lucide-react'
+import { RefObject } from 'react'
 
 interface User {
   id: string
@@ -60,18 +60,6 @@ export function ConversationsList({
   onMouseUp,
   formatTimestamp,
 }: ConversationsListProps) {
-  const [peopleQuery, setPeopleQuery] = useState('')
-
-  const filteredPeople = useMemo(() => {
-    const q = peopleQuery.trim().toLowerCase()
-    if (!q) return users
-    return users.filter((u) => `${u.name} ${u.email}`.toLowerCase().includes(q))
-  }, [peopleQuery, users])
-
-  const onlineCount = useMemo(() => {
-    return users.reduce((acc, u) => acc + (onlineUsers.has(u.id) ? 1 : 0), 0)
-  }, [users, onlineUsers])
-
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200">
@@ -81,7 +69,7 @@ export function ConversationsList({
             <button
               ref={newMessageButtonRef}
               onClick={onToggleNewMessage}
-              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#2D9B98] hover:bg-[#268784] text-white text-sm font-medium rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />
               New Message
@@ -121,13 +109,24 @@ export function ConversationsList({
                         onClick={() => onStartChat(user.id)}
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
                       >
-                        <div className="w-9 h-9 bg-gray-300 rounded-full flex items-center justify-center shrink-0">
-                          <span className="text-gray-700 font-semibold text-xs">
-                            {user.name.charAt(0).toUpperCase()}
-                          </span>
+                        <div className="relative shrink-0">
+                          <div className="w-9 h-9 bg-gray-300 rounded-full overflow-hidden">
+                            <img
+                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div
+                            className={`absolute -top-0.5 -right-0.5 w-3 h-3 border-2 border-white rounded-full ${
+                              onlineUsers.has(user.id) ? 'bg-emerald-500' : 'bg-gray-300'
+                            }`}
+                            aria-label={onlineUsers.has(user.id) ? 'Online' : 'Offline'}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm text-gray-900">{user.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>
                       </div>
                     ))
@@ -136,75 +135,6 @@ export function ConversationsList({
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* People list (explicit online/offline requirement) */}
-      <div className="px-4 pt-4 pb-3 border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-gray-700" />
-            <p className="text-sm font-semibold text-gray-900">People</p>
-          </div>
-          <p className="text-xs text-gray-500">
-            <span className="font-medium text-emerald-600">{onlineCount}</span> online •{' '}
-            <span className="font-medium">{Math.max(users.length - onlineCount, 0)}</span> offline
-          </p>
-        </div>
-
-        <div className="mt-3 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            value={peopleQuery}
-            onChange={(e) => setPeopleQuery(e.target.value)}
-            type="text"
-            placeholder="Search people (name/email)"
-            className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          />
-        </div>
-
-        <div className="mt-3 max-h-40 overflow-y-auto">
-          {filteredPeople.length === 0 ? (
-            <p className="py-3 text-center text-xs text-gray-500">No matching users</p>
-          ) : (
-            <div className="space-y-1">
-              {filteredPeople.map((u) => {
-                const isOnline = onlineUsers.has(u.id)
-                return (
-                  <button
-                    key={u.id}
-                    onClick={() => onStartChat(u.id)}
-                    className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                    title={`Start chat with ${u.name}`}
-                  >
-                    <div className="relative shrink-0">
-                      <div className="w-9 h-9 bg-gray-300 rounded-full overflow-hidden">
-                        <img
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`}
-                          alt={u.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div
-                        className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full ${
-                          isOnline ? 'bg-emerald-500' : 'bg-gray-300'
-                        }`}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">{u.name}</p>
-                        <span className={`text-xs ${isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
-                          {isOnline ? 'Online' : 'Offline'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          )}
         </div>
       </div>
       
@@ -293,9 +223,12 @@ export function ConversationsList({
                     className="w-full h-full object-cover"
                   />
                 </div>
-                {onlineUsers.has(session.otherUser.id) && (
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
-                )}
+                <div
+                  className={`absolute -top-0.5 -right-0.5 w-3 h-3 border-2 border-white rounded-full ${
+                    onlineUsers.has(session.otherUser.id) ? 'bg-emerald-500' : 'bg-gray-300'
+                  }`}
+                  aria-label={onlineUsers.has(session.otherUser.id) ? 'Online' : 'Offline'}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">

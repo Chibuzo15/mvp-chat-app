@@ -24,9 +24,12 @@ export function ChatHeader({ user, isOnline, onToggleContactInfo }: ChatHeaderPr
               className="w-full h-full object-cover"
             />
           </div>
-          {isOnline && (
-            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
-          )}
+          <div
+            className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white rounded-full ${
+              isOnline ? 'bg-emerald-500' : 'bg-gray-300'
+            }`}
+            aria-label={isOnline ? 'Online' : 'Offline'}
+          />
         </div>
         <div>
           <h3 className="font-semibold text-gray-900">{user.name}</h3>

@@ -1,3 +1,6 @@
+// Ensure .env is loaded for the custom server process (Socket.IO needs it too).
+import 'dotenv/config'
+
 import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'

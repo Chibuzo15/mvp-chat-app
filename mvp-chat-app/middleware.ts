@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
 
   // Define route types
   const authPages = ['/login', '/register']
-  const protectedPaths = ['/chat', '/api/chat', '/api/users', '/api/auth/me', '/api/ai']
+  const protectedPaths = ['/chat', '/api/chat', '/api/users', '/api/auth/me', '/api/auth/socket-token', '/api/ai']
   
   const isAuthPage = authPages.some((page) => pathname.startsWith(page))
   const isProtectedRoute = protectedPaths.some((route) => pathname.startsWith(route))
@@ -71,7 +71,16 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/chat', '/login', '/register', '/api/chat/:path*', '/api/users', '/api/auth/me', '/api/ai/:path*'],
+  matcher: [
+    '/chat',
+    '/login',
+    '/register',
+    '/api/chat/:path*',
+    '/api/users',
+    '/api/auth/me',
+    '/api/auth/socket-token',
+    '/api/ai/:path*',
+  ],
 }
 
 // Middleware always runs on Edge runtime in Next.js

@@ -44,6 +44,7 @@ export default function ChatPage() {
   const [users, setUsers] = useState<User[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null) // draft chat (no DB session yet)
   const [messages, setMessages] = useState<Message[]>([])
   const [messageInput, setMessageInput] = useState('')
   const [showNewMessage, setShowNewMessage] = useState(false)
@@ -122,7 +123,17 @@ export default function ChatPage() {
         if (!mounted) return
 
         console.log('[Chat] Initializing socket...')
-        const socket = getSocket()
+        const socketTokenRes = await fetch('/api/auth/socket-token')
+        if (!socketTokenRes.ok) {
+          throw new Error('Failed to fetch socket token')
+        }
+        const socketTokenData = await socketTokenRes.json().catch(() => ({}))
+        const socketToken = socketTokenData?.token
+        if (!socketToken || typeof socketToken !== 'string') {
+          throw new Error('Missing socket token')
+        }
+
+        const socket = getSocket(socketToken)
         socket.connect()
         socketRef.current = socket
 
@@ -138,6 +149,7 @@ export default function ChatPage() {
           if (mounted) {
           setSocketConnected(false)
           setError('Connection lost. Reconnecting...')
+          console.error('[Socket] connect_error:', err?.message)
           }
         })
 
@@ -275,7 +287,7 @@ export default function ChatPage() {
       setSessions(realSessions)
 
       // Auto-select first session if none selected
-      if (!selectedSession && realSessions.length > 0) {
+      if (!selectedSession && !selectedUser && realSessions.length > 0) {
         const firstSession = realSessions[0]
         setSelectedSession(firstSession)
         await loadMessages(firstSession.id)
@@ -286,39 +298,18 @@ export default function ChatPage() {
     }
   }
 
-  const startChat = async (targetUserId: string) => {
-    try {
-      const targetUser = users.find(u => u.id === targetUserId)
-      
-      if (!targetUser) {
-        setError('User not found')
-        return
-      }
-      
-      const res = await fetch('/api/chat/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUserId }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-      
-        const newSession: Session = {
-          id: data.sessionId,
-          otherUser: targetUser,
-        }
-        setSelectedSession(newSession)
-        setShowNewMessage(false)
-        await loadMessages(data.sessionId)
-      
-        if (socketRef.current) {
-          socketRef.current.emit('join-session', data.sessionId)
-        }
-      }
-    } catch (err) {
-      setError('Failed to start chat')
+  // IMPORTANT: selecting a user should NOT create a DB session.
+  // Session is created only when the first message is sent.
+  const selectUserToChat = (targetUserId: string) => {
+    const targetUser = users.find(u => u.id === targetUserId)
+    if (!targetUser) {
+      setError('User not found')
+      return
     }
+    setSelectedSession(null)
+    setSelectedUser(targetUser)
+    setMessages([])
+    setShowNewMessage(false)
   }
 
   const loadMessages = async (sessionId: string) => {
@@ -337,15 +328,61 @@ export default function ChatPage() {
     }
   }
 
-  const sendMessage = () => {
-    if (!messageInput.trim() || !selectedSession) return
+  const ensureSessionForSelectedUser = async (): Promise<Session> => {
+    if (selectedSession) return selectedSession
+    if (!selectedUser) throw new Error('No recipient selected')
+
+    const res = await fetch('/api/chat/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: selectedUser.id }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data?.sessionId) {
+      throw new Error(data?.error || 'Failed to start chat')
+    }
+
+    const created: Session = {
+      id: data.sessionId,
+      otherUser: selectedUser,
+      unreadCount: 0,
+    }
+
+    setSelectedSession(created)
+    setSelectedUser(null)
+
+    // Add session to list if it isn't already there (first message in a new chat)
+    setSessions((prev) => {
+      const exists = prev.some((s) => s.id === created.id)
+      return exists ? prev : [created, ...prev]
+    })
+
+    if (socketRef.current) {
+      socketRef.current.emit('join-session', created.id)
+    }
+
+    return created
+  }
+
+  const sendMessage = async () => {
+    if (!messageInput.trim()) return
+    if (!selectedSession && !selectedUser) return
 
     const tempId = `temp-${Date.now()}`
+    let sessionToUse: Session
+    try {
+      sessionToUse = await ensureSessionForSelectedUser()
+    } catch (err: any) {
+      setError(err?.message || 'Failed to start chat')
+      return
+    }
+
     const tempMessage: Message = {
       id: tempId,
       content: messageInput,
       senderId: currentUserId || 'current-user',
-      sessionId: selectedSession.id,
+      sessionId: sessionToUse.id,
       createdAt: new Date().toISOString(),
       sender: { id: currentUserId || 'current-user', name: 'You', email: '' },
       tempId,
@@ -356,22 +393,21 @@ export default function ChatPage() {
 
     // Optimistically update the session row
     setSessions(prev => {
-      const idx = prev.findIndex(s => s.id === selectedSession.id)
-      if (idx === -1) return prev
-      const session = prev[idx]
+      const idx = prev.findIndex(s => s.id === sessionToUse.id)
+      const session = idx === -1 ? sessionToUse : prev[idx]
       const updated: Session = {
         ...session,
         lastMessage: tempMessage.content,
         timestamp: tempMessage.createdAt,
         unreadCount: 0,
       }
-      return [updated, ...prev.filter(s => s.id !== selectedSession.id)]
+      return [updated, ...prev.filter(s => s.id !== sessionToUse.id)]
     })
 
-    const isAiChat = selectedSession.otherUser.email === 'ai@chat.app'
+    const isAiChat = sessionToUse.otherUser.email === 'ai@chat.app'
 
     if (isAiChat) {
-      const aiUserId = selectedSession.otherUser.id
+      const aiUserId = sessionToUse.otherUser.id
       const typingId = `typing-${Date.now()}`
 
       setAiTyping(true)
@@ -381,12 +417,12 @@ export default function ChatPage() {
           id: typingId,
           content: 'Typing…',
           senderId: aiUserId,
-          sessionId: selectedSession.id,
+          sessionId: sessionToUse.id,
           createdAt: new Date().toISOString(),
           sender: {
             id: aiUserId,
-            name: selectedSession.otherUser.name,
-            email: selectedSession.otherUser.email,
+            name: sessionToUse.otherUser.name,
+            email: sessionToUse.otherUser.email,
           },
         },
       ])
@@ -394,7 +430,7 @@ export default function ChatPage() {
       fetch('/api/ai/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: selectedSession.id, message: tempMessage.content }),
+        body: JSON.stringify({ sessionId: sessionToUse.id, message: tempMessage.content }),
       })
         .then(async (res) => {
           const data = await res.json().catch(() => ({}))
@@ -408,7 +444,7 @@ export default function ChatPage() {
           })
 
           setSessions((prev) => {
-            const idx = prev.findIndex((s) => s.id === selectedSession.id)
+            const idx = prev.findIndex((s) => s.id === sessionToUse.id)
             if (idx === -1) return prev
             const session = prev[idx]
             const updated: Session = {
@@ -417,7 +453,7 @@ export default function ChatPage() {
               timestamp: data.assistantMessage?.createdAt || session.timestamp,
               unreadCount: 0,
             }
-            return [updated, ...prev.filter((s) => s.id !== selectedSession.id)]
+            return [updated, ...prev.filter((s) => s.id !== sessionToUse.id)]
           })
         })
         .catch((err) => {
@@ -434,7 +470,7 @@ export default function ChatPage() {
 
     if (socketRef.current) {
       socketRef.current.emit('send-message', {
-        sessionId: selectedSession.id,
+        sessionId: sessionToUse.id,
         content: tempMessage.content,
         tempId,
       })
@@ -443,6 +479,7 @@ export default function ChatPage() {
 
   const handleSelectSession = (session: Session) => {
     setSelectedSession(session)
+    setSelectedUser(null)
     loadMessages(session.id)
     setSwipedSession(null)
     
@@ -599,7 +636,7 @@ export default function ChatPage() {
                 newMessageDropdownRef={newMessageDropdownRef}
                 onToggleNewMessage={() => setShowNewMessage(!showNewMessage)}
                 onSelectSession={handleSelectSession}
-                onStartChat={startChat}
+                onStartChat={selectUserToChat}
                 onContextMenu={handleContextMenu}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -613,11 +650,11 @@ export default function ChatPage() {
 
             {/* Chat Content Card */}
             <div className="flex-1 bg-[#fff] rounded-2xl shadow-sm overflow-hidden flex flex-col p-4">
-              {selectedSession ? (
+              {selectedSession || selectedUser ? (
                 <div className="flex-1 bg-white rounded-2xl overflow-hidden flex flex-col">
                   <ChatHeader
-                    user={selectedSession.otherUser}
-                    isOnline={onlineUsers.has(selectedSession.otherUser.id)}
+                    user={(selectedSession?.otherUser || selectedUser)!}
+                    isOnline={onlineUsers.has((selectedSession?.otherUser || selectedUser)!.id)}
                     onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
                   />
 
@@ -650,9 +687,10 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {showContactInfo && selectedSession && (
+      {showContactInfo && (selectedSession || selectedUser) && (
         <ContactInfoModal
-          user={selectedSession.otherUser}
+          user={(selectedSession?.otherUser || selectedUser)!}
+          isOnline={onlineUsers.has((selectedSession?.otherUser || selectedUser)!.id)}
           onClose={() => setShowContactInfo(false)}
         />
       )}

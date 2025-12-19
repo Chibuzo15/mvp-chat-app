@@ -9,10 +9,11 @@ interface User {
 
 interface ContactInfoModalProps {
   user: User
+  isOnline: boolean
   onClose: () => void
 }
 
-export function ContactInfoModal({ user, onClose }: ContactInfoModalProps) {
+export function ContactInfoModal({ user, isOnline, onClose }: ContactInfoModalProps) {
   const [activeTab, setActiveTab] = useState<'media' | 'link' | 'docs'>('media')
   const [isVisible, setIsVisible] = useState(false)
 
@@ -53,17 +54,26 @@ export function ContactInfoModal({ user, onClose }: ContactInfoModalProps) {
 
         {/* Profile Section */}
         <div className="px-6 py-8 border-b border-gray-100 flex flex-col items-center shrink-0">
-          <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-full mb-4 overflow-hidden flex items-center justify-center">
+          <div className="relative w-24 h-24 rounded-full mb-4 overflow-hidden flex items-center justify-center bg-gray-200">
             <img 
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
               alt={user.name}
               className="w-full h-full object-cover"
             />
+            <div
+              className={`absolute -top-0.5 -right-0.5 w-4 h-4 border-2 border-white rounded-full ${
+                isOnline ? 'bg-emerald-500' : 'bg-gray-300'
+              }`}
+              aria-label={isOnline ? 'Online' : 'Offline'}
+            />
           </div>
           <h4 className="text-lg font-semibold text-gray-900 mb-1">
             {user.name}
           </h4>
-          <p className="text-sm text-gray-500 mb-6">{user.email}</p>
+          <p className="text-sm text-gray-500">{user.email}</p>
+          <p className={`text-xs font-medium mt-1 mb-6 ${isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
+            {isOnline ? 'Online' : 'Offline'}
+          </p>
         
           {/* Audio/Video Buttons */}
           <div className="flex gap-3 w-full">
