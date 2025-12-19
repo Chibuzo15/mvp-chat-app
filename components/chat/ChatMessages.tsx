@@ -80,7 +80,7 @@ export function ChatMessages({
             const isOwn = message.senderId === currentUserId
             return (
               <div key={message.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} mb-4`}>
-                <div className={`max-w-md bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100`}>
+                <div className={`max-w-md rounded-2xl px-4 py-3 shadow-sm border border-gray-100 ${isOwn ? 'bg-[#F0FDF4]' : 'bg-white'}`}>
                   <p className="text-sm text-gray-800 leading-relaxed">{message.content}</p>
                 </div>
                 <div className={`flex items-center gap-1 mt-1 px-1 ${isOwn ? 'flex-row-reverse' : ''}`}>

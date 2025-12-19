@@ -4,7 +4,86 @@ import { ensureAiUser } from '@/lib/ai'
 
 export const dynamic = 'force-dynamic'
 
-const GEMINI_MODEL = 'gemini-1.5-flash'
+// Default model candidates (order matters). We’ll auto-fallback at runtime by
+// calling ListModels if the configured/default model isn’t available.
+const DEFAULT_GEMINI_MODEL_CANDIDATES = [
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro-latest',
+  'gemini-1.5-pro',
+]
+
+let cachedResolvedModel: string | null = null
+let cachedSupportedModels: string[] | null = null
+
+function normalizeModelName(model: string): string {
+  // Accept either "gemini-..." or "models/gemini-..."
+  return model.startsWith('models/') ? model : `models/${model}`
+}
+
+function getGenerateContentUrl(model: string, apiKey: string) {
+  return `https://generativelanguage.googleapis.com/v1beta/${normalizeModelName(model)}:generateContent?key=${apiKey}`
+}
+
+function isModelNotFoundOrUnsupportedError(message: string | undefined): boolean {
+  const m = (message || '').toLowerCase()
+  return (
+    m.includes('is not found') ||
+    m.includes('not supported') ||
+    m.includes('unsupported') ||
+    m.includes('call listmodels')
+  )
+}
+
+async function listSupportedGenerateContentModels(apiKey: string): Promise<string[]> {
+  if (cachedSupportedModels !== null) return cachedSupportedModels
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+    { method: 'GET' }
+  )
+
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    // Don't fail the whole request just because model listing failed.
+    console.warn('Gemini ListModels failed:', data?.error?.message || res.status)
+    cachedSupportedModels = []
+    return []
+  }
+
+  const models = Array.isArray(data?.models) ? data.models : []
+  const supportedModels: string[] = models
+    .filter((m: any) => Array.isArray(m?.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+    .map((m: any) => (typeof m?.name === 'string' ? m.name.replace(/^models\//, '') : null))
+    .filter((name: string | null): name is string => name !== null)
+  
+  cachedSupportedModels = supportedModels
+  return supportedModels
+}
+
+async function generateWithModel(params: {
+  apiKey: string
+  model: string
+  contents: any[]
+}) {
+  const { apiKey, model, contents } = params
+
+  const res = await fetch(getGenerateContentUrl(model, apiKey), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      },
+    }),
+  })
+
+  const data = await res.json().catch(() => ({}))
+  return { ok: res.ok, status: res.status, data }
+}
 
 function extractGeminiText(data: any): string {
   const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).filter(Boolean).join('')
@@ -79,29 +158,59 @@ export async function POST(req: NextRequest) {
         parts: [{ text: m.content }],
       }))
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.95,
-            maxOutputTokens: 512,
-          },
-        }),
-      }
+    const envModel = process.env.GEMINI_MODEL?.trim()
+    const preferredModels = Array.from(
+      new Set(
+        [envModel, cachedResolvedModel, ...DEFAULT_GEMINI_MODEL_CANDIDATES].filter(Boolean) as string[]
+      )
     )
 
-    const geminiData = await geminiRes.json().catch(() => ({}))
+    let geminiData: any = null
+    let lastErrorMsg: string | undefined
+    let lastStatus: number | undefined
+    let usedModel: string | null = null
 
-    if (!geminiRes.ok) {
-      return NextResponse.json(
-        { error: geminiData?.error?.message || 'Gemini request failed' },
-        { status: 502 }
-      )
+    // First pass: try configured + cached + defaults.
+    for (const model of preferredModels) {
+      const attempt = await generateWithModel({ apiKey, model, contents })
+      if (attempt.ok) {
+        geminiData = attempt.data
+        usedModel = model
+        cachedResolvedModel = model
+        break
+      }
+
+      lastStatus = attempt.status
+      lastErrorMsg = attempt.data?.error?.message || 'Gemini request failed'
+      if (!isModelNotFoundOrUnsupportedError(lastErrorMsg)) {
+        break
+      }
+    }
+
+    // Second pass: if it looks like a model-availability issue, call ListModels and retry with a supported model.
+    if (!geminiData && isModelNotFoundOrUnsupportedError(lastErrorMsg)) {
+      const supported = await listSupportedGenerateContentModels(apiKey)
+      for (const model of supported) {
+        const attempt = await generateWithModel({ apiKey, model, contents })
+        if (attempt.ok) {
+          geminiData = attempt.data
+          usedModel = model
+          cachedResolvedModel = model
+          break
+        }
+
+        lastStatus = attempt.status
+        lastErrorMsg = attempt.data?.error?.message || 'Gemini request failed'
+        // If a supported model still fails with a non-model error, stop and surface it.
+        if (!isModelNotFoundOrUnsupportedError(lastErrorMsg)) {
+          break
+        }
+      }
+    }
+
+    if (!geminiData) {
+      console.warn('Gemini request failed', { status: lastStatus, modelTried: usedModel, error: lastErrorMsg })
+      return NextResponse.json({ error: lastErrorMsg || 'Gemini request failed' }, { status: 502 })
     }
 
     const reply = extractGeminiText(geminiData)

@@ -57,12 +57,14 @@ export default function ChatPage() {
   const [error, setError] = useState<string | null>(null)
   const [socketConnected, setSocketConnected] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [aiTyping, setAiTyping] = useState(false)
   const [typingBySession, setTypingBySession] = useState<Record<string, Record<string, boolean>>>({})
   const [swipedSession, setSwipedSession] = useState<string | null>(null)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   
   const socketRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -85,6 +87,13 @@ export default function ChatPage() {
   useEffect(() => {
     currentUserIdRef.current = currentUserId
   }, [currentUserId])
+
+  // Re-filter users when currentUser changes to ensure self is never shown
+  useEffect(() => {
+    if (currentUser?.id) {
+      setUsers(prev => prev.filter(u => u.id !== currentUser.id))
+    }
+  }, [currentUser?.id])
 
   // Ensure we join the currently selected room once the socket is connected
   useEffect(() => {
@@ -179,6 +188,28 @@ export default function ChatPage() {
           }
         })
 
+        socket.on('new-session', (sessionData: Session) => {
+          if (mounted) {
+            setSessions(prev => {
+              const exists = prev.some(s => s.id === sessionData.id)
+              if (exists) {
+                // Update existing session
+                return prev.map(s => 
+                  s.id === sessionData.id 
+                    ? { ...s, ...sessionData }
+                    : s
+                )
+              }
+              // Add new session to the top (but keep AI chat pinned)
+              const aiSession = prev.find(s => s.otherUser.email === 'ai@chat.app')
+              const otherSessions = prev.filter(s => s.otherUser.email !== 'ai@chat.app')
+              return aiSession 
+                ? [aiSession, sessionData, ...otherSessions]
+                : [sessionData, ...otherSessions]
+          })
+          }
+        })
+
         socket.on('receive-message', (message: Message) => {
           if (mounted) {
             setMessages(prev => {
@@ -196,7 +227,25 @@ export default function ChatPage() {
 
             setSessions(prev => {
               const idx = prev.findIndex(s => s.id === message.sessionId)
-              if (idx === -1) return prev
+              
+              // If session doesn't exist, we need to fetch it or create a placeholder
+              // This can happen if the user receives a message before the new-session event
+              if (idx === -1) {
+                // Create a placeholder session from the message data
+                // The new-session event should arrive shortly, but this ensures we don't lose the message
+                const placeholderSession: Session = {
+                  id: message.sessionId,
+                  otherUser: message.sender,
+                  lastMessage: message.content,
+                  timestamp: message.createdAt,
+                  unreadCount: selectedSessionIdRef.current === message.sessionId ? 0 : 1,
+                }
+                const aiSession = prev.find(s => s.otherUser.email === 'ai@chat.app')
+                const otherSessions = prev.filter(s => s.otherUser.email !== 'ai@chat.app')
+                return aiSession
+                  ? [aiSession, placeholderSession, ...otherSessions]
+                  : [placeholderSession, ...otherSessions]
+              }
 
               const session = prev[idx]
               const isSelected = selectedSessionIdRef.current === message.sessionId
@@ -282,6 +331,7 @@ export default function ChatPage() {
       if (res.ok) {
         const data = await res.json()
         setCurrentUserId(data.user.id)
+        setCurrentUser(data.user)
       }
     } catch (err) {
       console.error('Failed to fetch current user:', err)
@@ -296,8 +346,10 @@ export default function ChatPage() {
         const data = await res.json()
         // Safeguard: never show yourself in the "New Message" list even if the API regresses.
         const list: User[] = data.users || []
-        const filtered = currentUserIdRef.current
-          ? list.filter((u) => u.id !== currentUserIdRef.current)
+        // Filter out current user using both ref and state for robustness
+        const currentId = currentUserIdRef.current || currentUserId || currentUser?.id
+        const filtered = currentId
+          ? list.filter((u) => u.id !== currentId)
           : list
         setUsers(filtered)
       } else {
@@ -346,7 +398,7 @@ export default function ChatPage() {
     try {
       setShowNewMessage(false)
       setSelectedUser(null)
-      setSelectedSession(null)
+    setSelectedSession(null)
       setMessages([])
       setMessageInput('')
       setAiTyping(false)
@@ -385,7 +437,7 @@ export default function ChatPage() {
     } catch (err: any) {
       setError(err?.message || 'Failed to start chat')
       // Keep the target as a draft selection so the user can retry by sending a message.
-      setSelectedUser(targetUser)
+    setSelectedUser(targetUser)
     }
   }
 
@@ -732,6 +784,17 @@ export default function ChatPage() {
     return d.toLocaleDateString()
   }
 
+  // Filter sessions based on search query
+  const filteredSessions = searchQuery.trim()
+    ? sessions.filter(session => {
+        const query = searchQuery.toLowerCase()
+        const userName = session.otherUser.name.toLowerCase()
+        const userEmail = session.otherUser.email.toLowerCase()
+        const lastMessage = (session.lastMessage || '').toLowerCase()
+        return userName.includes(query) || userEmail.includes(query) || lastMessage.includes(query)
+      })
+    : sessions
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -749,13 +812,13 @@ export default function ChatPage() {
         <ChatSidebar />
       
         <div className="flex-1 flex flex-col overflow-hidden p-4">
-          <TopNavBar />
+          <TopNavBar currentUser={currentUser} />
 
           <div className="flex-1 flex gap-4 mt-4 overflow-hidden">
             {/* Conversations List Card */}
             <div className="w-[360px] bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col shrink-0">
               <ConversationsList
-                sessions={sessions}
+                sessions={filteredSessions}
                 users={users}
                 selectedSession={selectedSession}
                 showNewMessage={showNewMessage}
@@ -764,6 +827,8 @@ export default function ChatPage() {
                 swipedSession={swipedSession}
                 newMessageButtonRef={newMessageButtonRef}
                 newMessageDropdownRef={newMessageDropdownRef}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 onToggleNewMessage={() => setShowNewMessage(!showNewMessage)}
                 onSelectSession={handleSelectSession}
                 onStartChat={selectUserToChat}

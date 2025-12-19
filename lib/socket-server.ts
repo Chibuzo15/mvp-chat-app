@@ -114,6 +114,22 @@ export function initializeSocket(httpServer: HTTPServer) {
       try {
         const session = await prisma.chatSession.findUnique({
           where: { id: data.sessionId },
+          include: {
+            user1: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            user2: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
         })
 
         if (!session) {
@@ -142,6 +158,30 @@ export function initializeSocket(httpServer: HTTPServer) {
             },
           },
         })
+
+        // Determine the recipient and sender info
+        const recipientUserId = session.user1Id === userId ? session.user2Id : session.user1Id
+        // From the recipient's perspective, the "otherUser" is the sender
+        const senderAsOtherUser = session.user1Id === userId ? session.user1 : session.user2
+
+        // Emit new-session event to the recipient so they can add it to their list
+        const recipientSockets = userSockets.get(recipientUserId)
+        if (recipientSockets && recipientSockets.size > 0) {
+          const sessionData = {
+            id: session.id,
+            otherUser: senderAsOtherUser, // The sender is the "otherUser" from recipient's perspective
+            lastMessage: message.content,
+            timestamp: message.createdAt.toISOString(),
+            unreadCount: 1,
+          }
+          // Emit to all sockets of the recipient
+          recipientSockets.forEach(socketId => {
+            const recipientSocket = io.sockets.sockets.get(socketId)
+            if (recipientSocket) {
+              recipientSocket.emit('new-session', sessionData)
+            }
+          })
+        }
 
         // Sending a message implies the sender is no longer typing.
         socket.to(data.sessionId).emit('user-typing', {

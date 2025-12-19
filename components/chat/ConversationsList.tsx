@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Search, MessageSquare, Archive, CheckCheck, Filter } from 'lucide-react'
+import { Plus, Search, MessageSquare, Archive, CheckCheck, Filter, X } from 'lucide-react'
 import { RefObject } from 'react'
 
 interface User {
@@ -27,6 +27,8 @@ interface ConversationsListProps {
   swipedSession: string | null
   newMessageButtonRef: RefObject<HTMLButtonElement>
   newMessageDropdownRef: RefObject<HTMLDivElement>
+  searchQuery: string
+  onSearchChange: (query: string) => void
   onToggleNewMessage: () => void
   onSelectSession: (session: Session) => void
   onStartChat: (userId: string) => void
@@ -50,6 +52,8 @@ export function ConversationsList({
   swipedSession,
   newMessageButtonRef,
   newMessageDropdownRef,
+  searchQuery,
+  onSearchChange,
   onToggleNewMessage,
   onSelectSession,
   onStartChat,
@@ -146,11 +150,24 @@ export function ConversationsList({
           <input
             type="text"
             placeholder="Search in message"
-            className="flex-1 pl-9 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="flex-1 pl-9 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
           />
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors">
-            <Filter className="w-4 h-4 text-gray-600" strokeWidth={2} />
-          </button>
+          {searchQuery && (
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+              title="Clear search"
+            >
+              <X className="w-4 h-4 text-gray-600" strokeWidth={2} />
+            </button>
+          )}
+          {!searchQuery && (
+            <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors">
+              <Filter className="w-4 h-4 text-gray-600" strokeWidth={2} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -180,7 +197,7 @@ export function ConversationsList({
                 swipedSession === `${session.id}-right` ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
-              <button className="h-full px-6 bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 min-w-[80px] rounded-r-2xl">
+              <button className="h-full px-6 bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 min-w-[80px] rounded-2xl">
                 <MessageSquare className="w-5 h-5" strokeWidth={2} />
                 <span className="text-xs font-medium">Unread</span>
               </button>
@@ -192,7 +209,7 @@ export function ConversationsList({
                 swipedSession === `${session.id}-left` ? 'translate-x-0' : 'translate-x-full'
               }`}
             >
-              <button className="h-full px-6 bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 min-w-[80px] rounded-l-2xl">
+              <button className="h-full px-6 bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 min-w-[80px] rounded-2xl">
                 <Archive className="w-5 h-5" strokeWidth={2} />
                 <span className="text-xs font-medium">Archive</span>
               </button>
