@@ -2,7 +2,7 @@ import { Home, MessageSquare, Compass, Folder, Image as ImageIcon, Sparkles, Ref
 
 export function ChatSidebar() {
   return (
-    <div className="w-[88px] bg-[#F5F3F0] flex flex-col items-center py-6 shrink-0 border-r border-[#E8E5E1]">
+    <div className="hidden md:flex w-[88px] bg-[#F5F3F0] flex-col items-center py-6 shrink-0 border-r border-[#E8E5E1]">
       {/* Logo */}
       <div className="mb-8">
         <div className="w-[52px] h-[52px] bg-[#2D9B98] rounded-full flex items-center justify-center shadow-sm">

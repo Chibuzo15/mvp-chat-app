@@ -795,6 +795,8 @@ export default function ChatPage() {
       })
     : sessions
 
+  const hasActiveChat = !!(selectedSession || selectedUser)
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -808,15 +810,21 @@ export default function ChatPage() {
 
   return (
     <>
-      <div className="flex h-screen bg-[#F5F3F0]">
+      <div className="flex min-h-screen h-[100dvh] bg-[#F5F3F0]">
         <ChatSidebar />
       
-        <div className="flex-1 flex flex-col overflow-hidden p-4">
+        <div className="flex-1 flex flex-col overflow-hidden p-2 sm:p-4">
           <TopNavBar currentUser={currentUser} />
 
           <div className="flex-1 flex gap-4 mt-4 overflow-hidden">
             {/* Conversations List Card */}
-            <div className="w-[360px] bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col shrink-0">
+            <div
+              className={[
+                'bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col',
+                'w-full md:w-[360px] shrink-0',
+                hasActiveChat ? 'hidden md:flex' : 'flex',
+              ].join(' ')}
+            >
               <ConversationsList
                 sessions={filteredSessions}
                 users={users}
@@ -844,7 +852,12 @@ export default function ChatPage() {
             </div>
 
             {/* Chat Content Card */}
-            <div className="flex-1 bg-[#fff] rounded-2xl shadow-sm overflow-hidden flex flex-col p-4">
+            <div
+              className={[
+                'flex-1 bg-[#fff] rounded-2xl shadow-sm overflow-hidden flex flex-col p-3 sm:p-4',
+                hasActiveChat ? 'flex' : 'hidden md:flex',
+              ].join(' ')}
+            >
               {selectedSession || selectedUser ? (
                 <div className="flex-1 bg-white rounded-2xl overflow-hidden flex flex-col">
                   <ChatHeader
@@ -861,9 +874,17 @@ export default function ChatPage() {
                         : false)
                     }
                     onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
+                    onBack={() => {
+                      setSelectedSession(null)
+                      selectedSessionIdRef.current = null
+                      setSelectedUser(null)
+                      setMessages([])
+                      setMessageInput('')
+                      setAiTyping(false)
+                    }}
                   />
 
-                  <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4 bg-[#F5F3F0] rounded-md">
+                  <div className="flex-1 overflow-y-auto px-3 sm:px-8 py-4 sm:py-6 space-y-4 bg-[#F5F3F0] rounded-md">
                     <ChatMessages
                       messages={messages}
                       currentUserId={currentUserId}

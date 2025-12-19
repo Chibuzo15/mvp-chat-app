@@ -39,7 +39,7 @@ export function ContactInfoModal({ user, isOnline, onClose }: ContactInfoModalPr
       />
       
       {/* Modal */}
-      <div className={`fixed top-4 right-4 bottom-4 w-[400px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transition-transform duration-300 ease-out ${
+      <div className={`fixed top-0 right-0 bottom-0 w-full bg-white rounded-none sm:top-4 sm:right-4 sm:bottom-4 sm:w-[400px] sm:rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transition-transform duration-300 ease-out ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}>
         {/* Header */}

@@ -164,9 +164,9 @@ export function ConversationsList({
             </button>
           )}
           {!searchQuery && (
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors">
-              <Filter className="w-4 h-4 text-gray-600" strokeWidth={2} />
-            </button>
+          <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors">
+            <Filter className="w-4 h-4 text-gray-600" strokeWidth={2} />
+          </button>
           )}
         </div>
       </div>

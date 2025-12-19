@@ -1,4 +1,4 @@
-import { Phone, Video, MoreVertical } from 'lucide-react'
+import { ChevronLeft, Phone, Video, MoreVertical } from 'lucide-react'
 
 interface User {
   id: string
@@ -11,12 +11,24 @@ interface ChatHeaderProps {
   isOnline: boolean
   isTyping?: boolean
   onToggleContactInfo: () => void
+  onBack?: () => void
 }
 
-export function ChatHeader({ user, isOnline, isTyping, onToggleContactInfo }: ChatHeaderProps) {
+export function ChatHeader({ user, isOnline, isTyping, onToggleContactInfo, onBack }: ChatHeaderProps) {
   return (
     <div className="bg-white px-6 py-4 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-3">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="md:hidden -ml-2 w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Back"
+            title="Back"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-700" strokeWidth={2} />
+          </button>
+        )}
         <div className="relative">
           <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
             <img 

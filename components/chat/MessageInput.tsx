@@ -15,7 +15,7 @@ export function MessageInput({ messageInput, onMessageChange, onSendMessage }: M
   }
 
   return (
-    <div className="px-6 py-4 bg-white shrink-0">
+    <div className="pr-6 py-4 bg-white shrink-0">
       <div className="flex items-center gap-3">
         <div className="flex-1 relative">
           <input
@@ -24,7 +24,7 @@ export function MessageInput({ messageInput, onMessageChange, onSendMessage }: M
             onChange={(e) => onMessageChange(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type any message..."
-            className="w-full px-4 py-3 text-sm text-gray-700 bg-white border-none focus:outline-none placeholder:text-gray-400"
+            className="w-full px-4 py-3 text-sm text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#2D9B98] focus:border-transparent placeholder:text-gray-400"
           />
         </div>
         
