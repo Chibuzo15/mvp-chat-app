@@ -1,4 +1,4 @@
-export { ChatSidebar } from './ChatSidebar'
+export { ChatSidebar, ChatSidebarDrawer } from './ChatSidebar'
 export { ConversationsList } from './ConversationsList'
 export { ChatHeader } from './ChatHeader'
 export { ChatMessages } from './ChatMessages'

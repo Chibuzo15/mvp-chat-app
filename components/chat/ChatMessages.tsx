@@ -231,12 +231,16 @@ export function ChatMessages({
           {/* Messages */}
           {group.messages.map((message) => {
             const isOwn = message.senderId === currentUserId
+            const isPending = !!message.tempId && message.id === message.tempId
+            const msgTime = new Date(message.createdAt).getTime()
+            const readTime = readUpTo ? new Date(readUpTo).getTime() : 0
             const isRead =
               !!readUpTo &&
               !!currentUserId &&
               isOwn &&
-              !message.tempId &&
-              new Date(message.createdAt).getTime() <= new Date(readUpTo).getTime()
+              !isPending &&
+              msgTime <= readTime
+            
             return (
               <div key={message.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} mb-4`}>
                 <div className={`max-w-[85%] sm:max-w-md rounded-2xl px-4 py-3 shadow-sm border border-gray-100 ${isOwn ? 'bg-[#F0FDF4]' : 'bg-white'}`}>
@@ -249,7 +253,7 @@ export function ChatMessages({
                     {formatTime(message.createdAt)}
                   </span>
                   {isOwn && (
-                    message.tempId ? (
+                    isPending ? (
                       <Check className="w-3.5 h-3.5 text-gray-400" strokeWidth={2} />
                     ) : (
                       <CheckCheck

@@ -22,8 +22,7 @@ export function emitToUserSockets(userId: string, event: string, payload: any) {
   if (!sockets || sockets.size === 0) return
   sockets.forEach((socketId) => {
     const s = io.sockets.sockets.get(socketId)
-    if (!s) return
-    s.emit(event, payload)
+    if (s) s.emit(event, payload)
   })
 }
 
@@ -125,22 +124,24 @@ export function initializeSocket(httpServer: HTTPServer) {
           data: isUser1 ? { lastReadAtUser1: now } : { lastReadAtUser2: now },
         })
 
-        const sockets = userSockets.get(userId)
-        if (!sockets || sockets.size === 0) return
-        sockets.forEach((socketId) => {
-          const s = io.sockets.sockets.get(socketId)
-          if (!s) return
-          s.emit('session-read', { sessionId: data.sessionId, readerId: userId, readAt: now.toISOString() })
-        })
+        const payload = { sessionId: data.sessionId, readerId: userId, readAt: now.toISOString() }
 
-        // Notify the other participant's sockets so they can update tick marks in real-time.
+        // Emit to the reader's sockets (to sync across tabs)
+        const sockets = userSockets.get(userId)
+        if (sockets && sockets.size > 0) {
+          sockets.forEach((socketId) => {
+            const s = io.sockets.sockets.get(socketId)
+            if (s) s.emit('session-read', payload)
+          })
+        }
+
+        // Notify the other participant's sockets for read receipts
         const otherUserId = session.user1Id === userId ? session.user2Id : session.user1Id
         const otherSockets = userSockets.get(otherUserId)
         if (otherSockets && otherSockets.size > 0) {
           otherSockets.forEach((socketId) => {
             const s = io.sockets.sockets.get(socketId)
-            if (!s) return
-            s.emit('session-read', { sessionId: data.sessionId, readerId: userId, readAt: now.toISOString() })
+            if (s) s.emit('session-read', payload)
           })
         }
       } catch {

@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { getSocket, disconnectSocket } from '@/lib/socket-client'
 import { MessageSquare, X } from 'lucide-react'
 import { 
   ChatSidebar,
+  ChatSidebarDrawer,
   TopNavBar,
   ConversationsList,
   ChatHeader,
@@ -42,6 +43,7 @@ interface Session {
 
 export default function ChatPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const [users, setUsers] = useState<User[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
@@ -67,6 +69,8 @@ export default function ChatPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [readUpToBySession, setReadUpToBySession] = useState<Record<string, string>>({})
+  const [readReceiptTrigger, setReadReceiptTrigger] = useState(0)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   
   const socketRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -97,13 +101,66 @@ export default function ChatPage() {
     }
   }, [currentUser?.id])
 
+  // Read sessionId from URL on load/refresh and handle browser back/forward
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (loading || sessions.length === 0) return
+      
+      const currentPath = window.location.pathname
+      const pathParts = currentPath.split('/')
+      const urlSessionId = pathParts[pathParts.length - 1]
+      
+      // If URL has a sessionId and it's different from current selection, load it
+      if (urlSessionId && urlSessionId !== 'chat' && urlSessionId !== selectedSessionIdRef.current) {
+        const session = sessions.find(s => s.id === urlSessionId)
+        if (session) {
+          // Leave previous room
+          const prevSessionId = selectedSessionIdRef.current
+          if (socketRef.current && prevSessionId && prevSessionId !== session.id) {
+            socketRef.current.emit('leave-session', prevSessionId)
+          }
+          
+          setSelectedSession(session)
+          selectedSessionIdRef.current = session.id
+          setSelectedUser(null)
+          loadMessages(session.id)
+          
+          if (socketRef.current) {
+            socketRef.current.emit('join-session', session.id)
+            socketRef.current.emit('mark-read', { sessionId: session.id })
+          }
+          
+          if (session.otherLastReadAt) {
+            setReadUpToBySession((prev) => ({ ...prev, [session.id]: session.otherLastReadAt as string }))
+          }
+        }
+      } else if (currentPath === '/chat' && selectedSessionIdRef.current) {
+        // If URL is just /chat but we have a selected session, clear it
+        if (socketRef.current && selectedSessionIdRef.current) {
+          socketRef.current.emit('leave-session', selectedSessionIdRef.current)
+        }
+        setSelectedSession(null)
+        selectedSessionIdRef.current = null
+        setSelectedUser(null)
+        setMessages([])
+        setMessageInput('')
+        setAiTyping(false)
+      }
+    }
+
+    // Handle initial load and browser back/forward
+    handleUrlChange()
+    window.addEventListener('popstate', handleUrlChange)
+    
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange)
+    }
+  }, [sessions, loading])
+
   // Ensure we join the currently selected room once the socket is connected
   useEffect(() => {
-    if (!socketConnected) return
-    if (!socketRef.current) return
-    if (!selectedSession?.id) return
+    if (!socketConnected || !socketRef.current || !selectedSession?.id) return
     socketRef.current.emit('join-session', selectedSession.id)
-    // Mark as read whenever the user is actively viewing this session (covers initial auto-select too).
     socketRef.current.emit('mark-read', { sessionId: selectedSession.id })
   }, [socketConnected, selectedSession])
 
@@ -197,12 +254,26 @@ export default function ChatPage() {
             // Only append to the open thread. We still update the conversation list/unread count below.
             if (selectedSessionIdRef.current === message.sessionId) {
               setMessages(prev => {
-                const withoutTemp = prev.filter(m => m.tempId !== message.tempId)
-                return [...withoutTemp, message]
+                // Server echoes `tempId` for correlation; don't store it or the UI will treat the
+                // message as "pending" (single tick) until refresh.
+                const confirmedMessage: Message = { ...message }
+                delete (confirmedMessage as any).tempId
+
+                // Remove temp message by tempId match, OR by same content if it's our own recent temp
+                const me = currentUserIdRef.current
+                const filtered = prev.filter(m => {
+                  // Exact tempId match - remove
+                  if (message.tempId && m.tempId === message.tempId) return false
+                  // Already have this message by ID - skip to avoid duplicates
+                  if (m.id === message.id) return false
+                  // Our own temp message with same content (fallback if tempId didn't match)
+                  if (m.tempId && m.senderId === me && message.senderId === me && m.content === message.content) return false
+                  return true
+                })
+                return [...filtered, confirmedMessage]
               })
 
               // If this is an incoming message in the currently open session, mark it read immediately
-              // so the sender can see read-receipts without refresh.
               const me = currentUserIdRef.current
               const isIncoming = me ? message.senderId !== me : true
               if (isIncoming && socketRef.current) {
@@ -262,17 +333,33 @@ export default function ChatPage() {
         socket.on(
           'session-read',
           ({ sessionId, readerId, readAt }: { sessionId: string; readerId?: string; readAt?: string }) => {
-            if (!mounted) return
+           if (!mounted) return
             if (!sessionId) return
 
-            const me = currentUserIdRef.current
-            if (me && readerId === me) {
+            const me = currentUserIdRef.current || currentUserId
+            if (!me) return
+
+            if (readerId === me) {
+              // I read this session - clear unread across my tabs
               setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, unreadCount: 0 } : s)))
               return
             }
 
-            if (readAt) {
-              setReadUpToBySession((prev) => ({ ...prev, [sessionId]: readAt }))
+            // Other user read this session - update read receipts for my outgoing messages
+            if (readerId && readerId !== me && readAt) {
+              setReadUpToBySession((prev) => {
+                const existing = prev[sessionId]
+                const existingTime = existing ? new Date(existing).getTime() : 0
+                const newTime = new Date(readAt).getTime()
+                return newTime > existingTime ? { ...prev, [sessionId]: readAt } : prev
+              })
+              setSessions((prev) =>
+                prev.map((s) =>
+                  s.id === sessionId ? { ...s, otherLastReadAt: readAt } : s
+                )
+              )
+              // Force re-render to update tick marks
+              setReadReceiptTrigger((prev) => prev + 1)
             }
           }
         )
@@ -396,13 +483,21 @@ export default function ChatPage() {
 
       // Auto-select first session if none selected (only on desktop, md+ breakpoint = 768px)
       // On mobile, default to showing the conversations list
+      // BUT: don't auto-select if URL already has a sessionId (let the URL-based effect handle it)
       if (!selectedSession && !selectedUser && realSessions.length > 0) {
-        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
-        if (isDesktop) {
-          const firstSession = realSessions[0]
-          setSelectedSession(firstSession)
-          selectedSessionIdRef.current = firstSession.id
-          await loadMessages(firstSession.id)
+        const pathParts = pathname?.split('/') || []
+        const urlSessionId = pathParts[pathParts.length - 1]
+        const hasUrlSession = urlSessionId && urlSessionId !== 'chat'
+        
+        if (!hasUrlSession) {
+          const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
+          if (isDesktop) {
+            const firstSession = realSessions[0]
+            setSelectedSession(firstSession)
+            selectedSessionIdRef.current = firstSession.id
+            await loadMessages(firstSession.id)
+            window.history.pushState({}, '', `/chat/${firstSession.id}`)
+          }
         }
       }
     } catch (err) {
@@ -458,6 +553,9 @@ export default function ChatPage() {
       }
 
       await loadMessages(created.id)
+      
+      // Update URL to persist session on refresh (without page refresh)
+      window.history.pushState({}, '', `/chat/${created.id}`)
     } catch (err: any) {
       setError(err?.message || 'Failed to start chat')
       // Keep the target as a draft selection so the user can retry by sending a message.
@@ -669,6 +767,9 @@ export default function ChatPage() {
     if (session.otherLastReadAt) {
       setReadUpToBySession((prev) => ({ ...prev, [session.id]: session.otherLastReadAt as string }))
     }
+
+    // Update URL to persist session on refresh (without page refresh)
+    window.history.pushState({}, '', `/chat/${session.id}`)
   }
 
   // Emit typing events (debounced) for realtime "typing…" indicators.
@@ -843,9 +944,10 @@ export default function ChatPage() {
     <>
       <div className="flex min-h-screen h-[100dvh] bg-[#F5F3F0]">
         <ChatSidebar />
+        <ChatSidebarDrawer open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
         <div className="flex-1 flex flex-col overflow-hidden p-2 sm:p-4">
-          <TopNavBar currentUser={currentUser} />
+          <TopNavBar currentUser={currentUser} onToggleSidebar={() => setIsSidebarOpen(true)} />
 
           <div className="flex-1 flex gap-4 mt-4 overflow-hidden">
             {/* Conversations List Card */}
@@ -916,11 +1018,14 @@ export default function ChatPage() {
                       setMessages([])
                       setMessageInput('')
                       setAiTyping(false)
+                      // Update URL back to /chat (list view) without page refresh
+                      window.history.pushState({}, '', '/chat')
                     }}
                   />
 
                   <div className="flex-1 overflow-y-auto px-3 sm:px-8 py-4 sm:py-6 space-y-4 bg-[#F5F3F0] rounded-md">
                     <ChatMessages
+                      key={`msgs-${selectedSession?.id}-${readReceiptTrigger}`}
                       messages={messages}
                       currentUserId={currentUserId}
                       readUpTo={selectedSession?.id ? readUpToBySession[selectedSession.id] : undefined}
