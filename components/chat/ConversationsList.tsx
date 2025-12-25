@@ -231,7 +231,7 @@ export function ConversationsList({
                 }
               }}
               onContextMenu={(e) => onContextMenu(e, session)}
-              className={`flex items-start gap-3 h-[70px] px-4 py-4 cursor-pointer transition-all duration-200 relative ${
+              className={`flex items-center gap-3 h-[70px] px-4 py-4 cursor-pointer transition-all duration-200 relative ${
                 selectedSession?.id === session.id || swipedSession?.startsWith(session.id) 
                   ? 'bg-[#F3F3EE] rounded-[12px]' 
                   : 'bg-white hover:bg-[#F8F8F5] hover:rounded-[12px]'
