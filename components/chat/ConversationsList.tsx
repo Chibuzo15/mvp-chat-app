@@ -1,7 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
-import { PenIcon, SearchIcon, FilterIcon, MessageMenuIcon, ArchiveIcon, CheckIcon } from '@/components/icons'
+import { PenIcon, SearchIcon, FilterIcon, MessageMenuIcon, ArchiveIcon, DoubleCheckIcon } from '@/components/icons'
 import { RefObject } from 'react'
 
 interface User {
@@ -118,7 +118,7 @@ export function ConversationsList({
                       <div
                         key={user.id}
                         onClick={() => onStartChat(user.id)}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="flex items-center gap-3 mx-4 px-4 py-2.5 hover:bg-[#F3F3EE] hover:rounded-lg cursor-pointer transition-colors"
                       >
                         <div className="relative shrink-0">
                           <div className="w-9 h-9 bg-gray-300 rounded-full overflow-hidden">
@@ -233,8 +233,8 @@ export function ConversationsList({
               onContextMenu={(e) => onContextMenu(e, session)}
               className={`flex items-start gap-3 h-[70px] px-4 py-4 cursor-pointer transition-all duration-200 relative ${
                 selectedSession?.id === session.id || swipedSession?.startsWith(session.id) 
-                  ? 'bg-gray-100 rounded-[12px]' 
-                  : 'bg-white hover:bg-gray-50'
+                  ? 'bg-[#F3F3EE] rounded-[12px]' 
+                  : 'bg-white hover:bg-[#F8F8F5] hover:rounded-[12px]'
               } ${
                 swipedSession === `${session.id}-left` ? '-translate-x-[85px]' : 
                 swipedSession === `${session.id}-right` ? 'translate-x-[85px]' : 
@@ -275,19 +275,19 @@ export function ConversationsList({
                       ? 'Typing…'
                       : session.lastMessage || 'No messages yet'}
                   </p>
-                  {session.lastMessage && 
-                   session.lastMessageSenderId === currentUserId && (
-                    (() => {
+                  {(() => {        
+                    if (session.lastMessage && currentUserId && session.lastMessageSenderId === currentUserId) {
                       const isRead = session.otherLastReadAt && 
                                     session.timestamp && 
                                     new Date(session.timestamp).getTime() <= new Date(session.otherLastReadAt).getTime()
                       return (
-                        <CheckIcon 
+                        <DoubleCheckIcon 
                           className={`w-4 h-4 ml-2 shrink-0 ${isRead ? 'text-[#1E9A80]' : 'text-gray-400'}`} 
                         />
                       )
-                    })()
-                  )}
+                    }
+                    return null
+                  })()}
                 </div>
               </div>
               

@@ -11,8 +11,8 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
     <div
       className={
         isDrawer
-          ? 'w-full bg-[#F5F3F0] h-full flex flex-col items-start px-5 py-6'
-          : 'w-[88px] bg-[#F5F3F0] flex-col items-center py-6'
+          ? 'w-full bg-[#F3F3ED] h-full flex flex-col items-start px-5 py-6'
+          : 'w-[88px] bg-[#F3F3ED] flex-col items-center py-6'
       }
     >
       {/* Logo */}
@@ -140,7 +140,7 @@ export function ChatSidebar() {
 
   return (
     // Desktop sidebar (md+) — restored to original layout/styles
-    <div className="hidden md:flex w-[88px] bg-[#F5F3F0] flex-col items-center py-6 shrink-0 border-r border-[#E8E5E1]">
+    <div className="hidden md:flex w-[88px] bg-[#F3F3ED] flex-col items-center py-6 shrink-0">
       {/* Logo */}
       <div className="mb-8 relative">
         <button
@@ -213,7 +213,7 @@ export function ChatSidebarDrawer({
       {/* Panel */}
       <div
         className={[
-          'absolute left-0 top-0 h-full w-[280px] bg-[#F5F3F0] border-r border-[#E8E5E1] transition-transform duration-200 overflow-hidden',
+          'absolute left-0 top-0 h-full w-[280px] bg-[#F3F3ED] transition-transform duration-200 overflow-hidden',
           open ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
       >

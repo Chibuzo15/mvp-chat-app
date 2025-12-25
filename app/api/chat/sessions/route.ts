@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
           select: {
             content: true,
             createdAt: true,
+            senderId: true,
           },
         },
       },
@@ -76,6 +77,7 @@ export async function GET(req: NextRequest) {
           otherUser: isUser1 ? session.user2 : session.user1,
           lastMessage: session.messages[0]?.content,
           timestamp: session.messages[0]?.createdAt || session.createdAt,
+          lastMessageSenderId: session.messages[0]?.senderId,
           unreadCount,
           otherLastReadAt: (isUser1 ? session.lastReadAtUser2 : session.lastReadAtUser1).toISOString(),
         }

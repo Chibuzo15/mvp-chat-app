@@ -666,6 +666,7 @@ export default function ChatPage() {
         ...session,
         lastMessage: tempMessage.content,
         timestamp: tempMessage.createdAt,
+        lastMessageSenderId: currentUserId || 'current-user',
         unreadCount: 0,
       }
       return [updated, ...prev.filter(s => s.id !== sessionToUse.id)]
@@ -945,7 +946,7 @@ export default function ChatPage() {
 
   return (
     <>
-      <div className="flex min-h-screen h-[100dvh] bg-[#F3F3EE]">
+      <div className="flex min-h-screen h-[100dvh] bg-[#F3F3ED]">
         <ChatSidebar />
         <ChatSidebarDrawer open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       

@@ -17,7 +17,7 @@ export function MessageInput({ messageInput, onMessageChange, onSendMessage }: M
   return (
     <div className=" py-1 sm:py-2 md:py-2 bg-white shrink-0">
       {/* Single border wrapper (input + icons + send) */}
-      <div className="w-full rounded-full border border-gray-200 bg-white px-2 py-2 sm:py-2.5 flex items-center gap-1 focus-within:ring-2 focus-within:ring-[#2D9B98] focus-within:border-transparent">
+      <div className="w-full rounded-full border border-gray-200 bg-white px-1 py-1 sm:py-1 flex items-center gap-1 focus-within:ring-2 focus-within:ring-[#2D9B98] focus-within:border-transparent">
         <input
           type="text"
           value={messageInput}
