@@ -140,8 +140,9 @@ export function TopNavBar({ currentUser, onToggleSidebar }: TopNavBarProps) {
               placeholder="Search"
               className="w-40 sm:w-64 md:w-80 pl-10 pr-10 sm:pr-16 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
             />
-            <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-1 px-2 py-0.5 bg-[#F3F3EE] rounded text-xs text-gray-500">
+            <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-[2px] px-2 py-0.5 bg-[#F3F3EE] rounded text-xs text-gray-500">
               <span>⌘</span>
+              <span>+</span>
               <span>K</span>
             </div>
           </div>

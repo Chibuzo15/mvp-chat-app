@@ -1,5 +1,9 @@
+'use client'
+
 import { X } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import { LogoIcon, HomeIcon, ChatIcon, CompassIcon, FolderIcon, ImageIcon, SparklesIcon } from '@/components/icons'
+import { ProfileModal } from './ProfileModal'
 
 function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
   const isDrawer = variant === 'drawer'
@@ -106,6 +110,34 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
 }
 
 export function ChatSidebar() {
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const profileButtonRef = useRef<HTMLButtonElement>(null)
+  const profileModalRef = useRef<HTMLDivElement>(null)
+
+  // Close modal on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileModalRef.current &&
+        !profileModalRef.current.contains(event.target as Node) &&
+        profileButtonRef.current &&
+        !profileButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileModal(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Mock current user data - replace with actual user data
+  const currentUser = {
+    id: 'current-user',
+    name: 'testing2',
+    email: 'testing2@gmail.com'
+  }
+
   return (
     // Desktop sidebar (md+) — restored to original layout/styles
     <div className="hidden md:flex w-[88px] bg-[#F5F3F0] flex-col items-center py-6 shrink-0 border-r border-[#E8E5E1]">
@@ -140,12 +172,25 @@ export function ChatSidebar() {
         <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors">
           <SparklesIcon className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
-          <img 
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
+        <div className="relative">
+          <button
+            ref={profileButtonRef}
+            onClick={() => setShowProfileModal(!showProfileModal)}
+            className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden hover:ring-2 hover:ring-[#2D9B98] transition-all"
+          >
+            <img 
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
+              alt="Profile"
+              className="w-full h-full object-cover"
+            />
+          </button>
+          {showProfileModal && (
+            <ProfileModal
+              user={currentUser}
+              onClose={() => setShowProfileModal(false)}
+              modalRef={profileModalRef}
+            />
+          )}
         </div>
       </div>
     </div>

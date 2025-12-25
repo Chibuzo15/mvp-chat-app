@@ -6,4 +6,5 @@ export { MessageInput } from './MessageInput'
 export { ContactInfoModal } from './ContactInfoModal'
 export { ContextMenu } from './ContextMenu'
 export { TopNavBar } from './TopNavBar'
+export { ProfileModal } from './ProfileModal'
 
