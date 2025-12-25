@@ -39,6 +39,7 @@ interface Session {
   timestamp?: string
   unreadCount?: number
   otherLastReadAt?: string
+  lastMessageSenderId?: string
 }
 
 export default function ChatPage() {
@@ -302,6 +303,7 @@ export default function ChatPage() {
                   otherUser: message.sender,
                   lastMessage: message.content,
                   timestamp: message.createdAt,
+                  lastMessageSenderId: message.senderId,
                   unreadCount: selectedSessionIdRef.current === message.sessionId ? 0 : 1,
                 }
                 // Add to top (most recent message), sorted by timestamp - no special AI pinning
@@ -317,6 +319,7 @@ export default function ChatPage() {
                 ...session,
                 lastMessage: message.content,
                 timestamp: message.createdAt,
+                lastMessageSenderId: message.senderId,
                 unreadCount:
                   isSelected ? 0 : isIncoming ? (session.unreadCount || 0) + 1 : session.unreadCount,
               }
@@ -981,6 +984,7 @@ export default function ChatPage() {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 formatTimestamp={formatTimestamp}
+                currentUserId={currentUserId}
               />
             </div>
 

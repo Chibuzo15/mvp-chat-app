@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, LogOut, Menu } from 'lucide-react'
+import { ChevronDown, Menu } from 'lucide-react'
 import { MessageIcon, BellIcon, SettingsIcon, SearchIcon } from '@/components/icons'
 
 interface TopNavBarProps {
@@ -14,36 +13,6 @@ interface TopNavBarProps {
 }
 
 export function TopNavBar({ currentUser, onToggleSidebar }: TopNavBarProps) {
-  const [showDropdown, setShowDropdown] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-    } finally {
-      // Full reload to ensure cookie state is cleared everywhere
-      window.location.href = '/login'
-    }
-  }
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   return (
     <div className="bg-white rounded-2xl shadow-sm shrink-0">
       {/* Mobile layout (keeps current mobile UI) */}
@@ -72,8 +41,6 @@ export function TopNavBar({ currentUser, onToggleSidebar }: TopNavBarProps) {
 
             <div className="relative">
               <button
-                ref={buttonRef}
-                onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors"
               >
                 <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
@@ -84,28 +51,9 @@ export function TopNavBar({ currentUser, onToggleSidebar }: TopNavBarProps) {
                   />
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-gray-600 transition-transform ${showDropdown ? 'rotate-180' : ''}`}
+                  className="w-4 h-4 text-gray-600"
                 />
               </button>
-
-              {showDropdown && currentUser && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
-                >
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-semibold text-gray-900">{currentUser.name}</p>
-                    <p className="text-xs text-gray-500 mt-1">{currentUser.email}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -160,8 +108,6 @@ export function TopNavBar({ currentUser, onToggleSidebar }: TopNavBarProps) {
           {/* Profile Dropdown */}
           <div className="relative">
             <button
-              ref={buttonRef}
-              onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors"
             >
               <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
@@ -171,28 +117,8 @@ export function TopNavBar({ currentUser, onToggleSidebar }: TopNavBarProps) {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown className="w-4 h-4 text-gray-600" />
             </button>
-
-            {/* Dropdown Menu */}
-            {showDropdown && currentUser && (
-              <div
-                ref={dropdownRef}
-                className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
-              >
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900">{currentUser.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">{currentUser.email}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

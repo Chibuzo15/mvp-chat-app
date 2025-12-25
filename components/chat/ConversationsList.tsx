@@ -1,7 +1,7 @@
 'use client'
 
-import { CheckCheck, X } from 'lucide-react'
-import { PenIcon, SearchIcon, FilterIcon, MessageMenuIcon, ArchiveIcon } from '@/components/icons'
+import { X } from 'lucide-react'
+import { PenIcon, SearchIcon, FilterIcon, MessageMenuIcon, ArchiveIcon, CheckIcon } from '@/components/icons'
 import { RefObject } from 'react'
 
 interface User {
@@ -16,6 +16,8 @@ interface Session {
   lastMessage?: string
   timestamp?: string
   unreadCount?: number
+  lastMessageSenderId?: string
+  otherLastReadAt?: string
 }
 
 interface ConversationsListProps {
@@ -41,6 +43,7 @@ interface ConversationsListProps {
   onMouseMove: (e: React.MouseEvent) => void
   onMouseUp: (sessionId: string) => void
   formatTimestamp: (date: string) => string
+  currentUserId?: string | null
 }
 
 export function ConversationsList({
@@ -66,6 +69,7 @@ export function ConversationsList({
   onMouseMove,
   onMouseUp,
   formatTimestamp,
+  currentUserId,
 }: ConversationsListProps) {
   return (
     <div className="flex flex-col h-full">
@@ -271,8 +275,18 @@ export function ConversationsList({
                       ? 'Typing…'
                       : session.lastMessage || 'No messages yet'}
                   </p>
-                  {session.lastMessage && !session.unreadCount && (
-                    <CheckCheck className="w-4 h-4 text-gray-400 ml-2 shrink-0" strokeWidth={2} />
+                  {session.lastMessage && 
+                   session.lastMessageSenderId === currentUserId && (
+                    (() => {
+                      const isRead = session.otherLastReadAt && 
+                                    session.timestamp && 
+                                    new Date(session.timestamp).getTime() <= new Date(session.otherLastReadAt).getTime()
+                      return (
+                        <CheckIcon 
+                          className={`w-4 h-4 ml-2 shrink-0 ${isRead ? 'text-[#1E9A80]' : 'text-gray-400'}`} 
+                        />
+                      )
+                    })()
                   )}
                 </div>
               </div>

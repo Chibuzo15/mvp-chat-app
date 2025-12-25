@@ -111,7 +111,7 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
 
 export function ChatSidebar() {
   const [showProfileModal, setShowProfileModal] = useState(false)
-  const profileButtonRef = useRef<HTMLButtonElement>(null)
+  const logoButtonRef = useRef<HTMLButtonElement>(null)
   const profileModalRef = useRef<HTMLDivElement>(null)
 
   // Close modal on outside click
@@ -120,8 +120,8 @@ export function ChatSidebar() {
       if (
         profileModalRef.current &&
         !profileModalRef.current.contains(event.target as Node) &&
-        profileButtonRef.current &&
-        !profileButtonRef.current.contains(event.target as Node)
+        logoButtonRef.current &&
+        !logoButtonRef.current.contains(event.target as Node)
       ) {
         setShowProfileModal(false)
       }
@@ -142,10 +142,21 @@ export function ChatSidebar() {
     // Desktop sidebar (md+) — restored to original layout/styles
     <div className="hidden md:flex w-[88px] bg-[#F5F3F0] flex-col items-center py-6 shrink-0 border-r border-[#E8E5E1]">
       {/* Logo */}
-      <div className="mb-8">
-        <div className="w-[52px] h-[52px] bg-[#2D9B98] rounded-full flex items-center justify-center shadow-sm">
+      <div className="mb-8 relative">
+        <button
+          ref={logoButtonRef}
+          onClick={() => setShowProfileModal(!showProfileModal)}
+          className="w-[52px] h-[52px] bg-[#2D9B98] rounded-full flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity cursor-pointer"
+        >
           <LogoIcon className="w-6 h-6" />
-        </div>
+        </button>
+        {showProfileModal && (
+          <ProfileModal
+            user={currentUser}
+            onClose={() => setShowProfileModal(false)}
+            modalRef={profileModalRef}
+          />
+        )}
       </div>
     
       {/* Navigation Icons */}
@@ -172,25 +183,12 @@ export function ChatSidebar() {
         <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors">
           <SparklesIcon className="w-5 h-5" />
         </button>
-        <div className="relative">
-          <button
-            ref={profileButtonRef}
-            onClick={() => setShowProfileModal(!showProfileModal)}
-            className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden hover:ring-2 hover:ring-[#2D9B98] transition-all"
-          >
-            <img 
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          </button>
-          {showProfileModal && (
-            <ProfileModal
-              user={currentUser}
-              onClose={() => setShowProfileModal(false)}
-              modalRef={profileModalRef}
-            />
-          )}
+        <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
+          <img 
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
     </div>

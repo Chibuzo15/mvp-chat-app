@@ -1,7 +1,7 @@
 'use client'
 
-import { ChevronLeft, Edit3, Gift, Sun, LogOut } from 'lucide-react'
 import { RefObject } from 'react'
+import { BackIcon, RenameFileIcon, WinFreeCreditsIcon, ThemeStyleIcon, LogoutIcon } from '@/components/icons'
 
 interface ProfileModalProps {
   user: {
@@ -25,80 +25,82 @@ export function ProfileModal({ user, onClose, modalRef }: ProfileModalProps) {
   return (
     <div
       ref={modalRef}
-      className="absolute left-0 top-full mt-3 w-[512px] bg-white rounded-[20px] shadow-2xl border border-gray-200 z-50 overflow-hidden"
+      className="absolute left-0 top-full mt-3 max-w-[307px] w-[307px] bg-white rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden"
     >
       {/* Go back to dashboard */}
       <button
         onClick={onClose}
-        className="w-full px-8 py-5 flex items-center gap-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100 text-left"
+        className="w-full px-4 py-4 text-left transition-colors flex items-center gap-3 bg-white"
       >
-        <ChevronLeft className="w-5 h-5 text-gray-700 shrink-0" strokeWidth={2} />
-        <span className="text-base font-normal text-gray-900">Go back to dashboard</span>
+        <div className="w-7 h-7 flex items-center justify-center bg-[#F8F8F5] rounded-[6px]">
+          <BackIcon className="w-1 h-2" />
+        </div>
+        <span className="text-base text-gray-900">Go back to dashboard</span>
       </button>
 
       {/* Rename file */}
-      <button className="w-full px-8 py-5 flex items-center gap-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100 text-left">
-        <Edit3 className="w-5 h-5 text-gray-700 shrink-0" strokeWidth={2} />
-        <span className="text-base font-normal text-gray-900">Rename file</span>
+      <button className="w-[calc(100%-2rem)] mx-4 px-4 py-4 text-left transition-colors flex items-center gap-3 bg-[#F8F8F5] rounded-lg">
+        <div className="w-7 h-7 flex items-center justify-center bg-white rounded-[6px]">
+          <RenameFileIcon className="w-[13px] h-[13px]" />
+        </div>
+        <span className="text-base text-gray-900">Rename file</span>
       </button>
 
-      {/* User Info & Credits Section */}
-      <div className="px-8 py-6 border-b border-gray-100">
-        {/* User Info */}
-        <div className="mb-6">
-          <h3 className="text-2xl font-semibold text-gray-900 mb-1.5 leading-tight">{user.name}</h3>
-          <p className="text-base text-gray-500 leading-relaxed">{user.email}</p>
+      {/* User Info */}
+      <div className="px-4 py-5 bg-white">
+        <p className="text-xl font-semibold text-gray-900 mb-1" style={{ fontWeight: 600 }}>{user.name}</p>
+        <p className="text-sm text-gray-500">{user.email}</p>
+      </div>
+
+      {/* Credits Section */}
+      <div className="w-[calc(100%-2rem)] mx-4 px-4 py-5 bg-[#F8F8F5] rounded-lg">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm text-[#8B8B8B]">Credits</span>
+          <span className="text-sm text-[#8B8B8B]">Renews in</span>
         </div>
-
-        {/* Credits Section */}
-        <div className="space-y-3">
-          {/* Credits and Renews */}
-          <div className="flex items-start justify-between mb-3.5">
-            <div>
-              <p className="text-sm text-gray-500 mb-1.5 leading-tight">Credits</p>
-              <p className="text-[28px] font-semibold text-gray-900 leading-none">20 left</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500 mb-1.5 leading-tight">Renews in</p>
-              <p className="text-[28px] font-semibold text-gray-900 leading-none">6h 24m</p>
-            </div>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-2xl text-gray-900" style={{ fontWeight: 500 }}>20 left</span>
+          <span className="text-xl text-gray-900" style={{ fontWeight: 500 }}>6h 24m</span>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="mb-3">
+          <div className="h-2 bg-[#E8E5DF] rounded-full overflow-hidden">
+            <div className="h-full bg-[#1E9A80] rounded-full" style={{ width: '80%' }} />
           </div>
-
-          {/* Progress Bar */}
-          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
-            <div 
-              className="absolute left-0 top-0 h-full bg-[#1E9A80] rounded-full transition-all"
-              style={{ width: '80%' }}
-            />
-          </div>
-
-          {/* Usage Info */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">5 of 25 used today</span>
-            <span className="text-[#1E9A80] font-medium">+25 tomorrow</span>
-          </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600">5 of 25 used today</span>
+          <span className="text-sm text-[#3BA395] font-medium">+25 tomorrow</span>
         </div>
       </div>
 
       {/* Win free credits */}
-      <button className="w-full px-8 py-5 flex items-center gap-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100 text-left">
-        <Gift className="w-5 h-5 text-gray-700 shrink-0" strokeWidth={2} />
-        <span className="text-base font-normal text-gray-900">Win free credits</span>
+      <button className="w-full px-4 py-4 text-left transition-colors flex items-center gap-3 bg-white">
+        <div className="w-7 h-7 flex items-center justify-center bg-[#F8F8F5] rounded-[6px]">
+          <WinFreeCreditsIcon className="w-[15px] h-[15px]" />
+        </div>
+        <span className="text-base text-gray-900">Win free credits</span>
       </button>
 
       {/* Theme Style */}
-      <button className="w-full px-8 py-5 flex items-center gap-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100 text-left">
-        <Sun className="w-5 h-5 text-gray-700 shrink-0" strokeWidth={2} />
-        <span className="text-base font-normal text-gray-900">Theme Style</span>
+      <button className="w-full px-4 py-4 text-left transition-colors flex items-center gap-3 bg-white">
+        <div className="w-7 h-7 flex items-center justify-center bg-[#F8F8F5] rounded-[6px]">
+          <ThemeStyleIcon className="w-4 h-4" />
+        </div>
+        <span className="text-base text-gray-900">Theme Style</span>
       </button>
 
       {/* Log out */}
       <button
         onClick={handleLogout}
-        className="w-full px-8 py-5 flex items-center gap-3.5 hover:bg-gray-50 transition-colors text-left"
+        className="w-full px-4 py-4 text-left transition-colors flex items-center gap-3 bg-white"
       >
-        <LogOut className="w-5 h-5 text-gray-700 shrink-0" strokeWidth={2} />
-        <span className="text-base font-normal text-gray-900">Log out</span>
+        <div className="w-7 h-7 flex items-center justify-center bg-[#F8F8F5] rounded-[6px]">
+          <LogoutIcon className="w-[14px] h-3" />
+        </div>
+        <span className="text-base text-gray-900">Log out</span>
       </button>
     </div>
   )
