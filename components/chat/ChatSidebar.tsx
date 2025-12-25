@@ -1,4 +1,5 @@
-import { Home, MessageSquare, Compass, Folder, Image as ImageIcon, Sparkles, RefreshCw, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { LogoIcon, HomeIcon, ChatIcon, CompassIcon, FolderIcon, ImageIcon, SparklesIcon } from '@/components/icons'
 
 function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
   const isDrawer = variant === 'drawer'
@@ -13,7 +14,7 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
       {/* Logo */}
       <div className={isDrawer ? 'mb-8 flex items-center gap-3' : 'mb-8'}>
         <div className="w-[52px] h-[52px] bg-[#2D9B98] rounded-full flex items-center justify-center shadow-sm">
-          <RefreshCw className="w-6 h-6 text-white" strokeWidth={2.5} />
+          <LogoIcon className="w-6 h-6" />
         </div>
         {isDrawer && <span className="font-semibold text-gray-900 text-lg">Menu</span>}
       </div>
@@ -27,17 +28,17 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
               : 'w-[44px] h-[44px] flex items-center justify-center text-gray-800 hover:text-gray-900 transition-colors'
           }
         >
-          <Home className={isDrawer ? 'w-[22px] h-[22px]' : 'w-[22px] h-[22px]'} fill="currentColor" strokeWidth={0} />
+          <HomeIcon className={isDrawer ? 'w-5 h-5' : 'w-5 h-5'} />
           {isDrawer && <span className="text-sm font-medium">Home</span>}
         </button>
         <button
           className={
             isDrawer
-              ? 'w-full h-12 flex items-center gap-3 px-3 rounded-xl text-[#2D9B98] bg-[#E0F2F1] transition-colors'
-              : 'w-[52px] h-[52px] flex items-center justify-center text-[#2D9B98] bg-[#E0F2F1] rounded-[18px] transition-colors'
+              ? 'w-full h-12 flex items-center gap-3 px-3 rounded-xl text-[#1E9A80] bg-[#F0FDF4] border border-[#1E9A80] transition-colors'
+              : 'w-[44px] h-[44px] flex items-center justify-center text-[#1E9A80] bg-[#F0FDF4] border border-[#1E9A80] rounded-lg transition-colors'
           }
         >
-          <MessageSquare className={isDrawer ? 'w-[24px] h-[24px]' : 'w-[24px] h-[24px]'} strokeWidth={2} />
+          <ChatIcon className={isDrawer ? 'w-5 h-5' : 'w-5 h-5'} />
           {isDrawer && <span className="text-sm font-semibold">Messages</span>}
         </button>
         <button
@@ -47,7 +48,7 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
               : 'w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors'
           }
         >
-          <Compass className="w-[22px] h-[22px]" strokeWidth={2} />
+          <CompassIcon className="w-5 h-5" />
           {isDrawer && <span className="text-sm font-medium">Explore</span>}
         </button>
         <button
@@ -57,7 +58,7 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
               : 'w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors'
           }
         >
-          <Folder className="w-[22px] h-[22px]" strokeWidth={2} />
+          <FolderIcon className="w-5 h-5" />
           {isDrawer && <span className="text-sm font-medium">Folders</span>}
         </button>
         <button
@@ -67,7 +68,7 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
               : 'w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors'
           }
         >
-          <ImageIcon className="w-[22px] h-[22px]" strokeWidth={2} />
+          <ImageIcon className="w-5 h-5" />
           {isDrawer && <span className="text-sm font-medium">Media</span>}
         </button>
       </div>
@@ -81,11 +82,11 @@ function SidebarContent({ variant }: { variant: 'desktop' | 'drawer' }) {
               : 'w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors'
           }
         >
-          <Sparkles className="w-[22px] h-[22px]" strokeWidth={2} />
+          <SparklesIcon className="w-5 h-5" />
           {isDrawer && <span className="text-sm font-medium">AI</span>}
         </button>
-        <div className={isDrawer ? 'flex items-center gap-3 px-3 py-2' : 'w-[48px] h-[48px] rounded-full overflow-hidden border-[3px] border-[#F59E0B] shadow-sm'}>
-          <div className="w-[48px] h-[48px] rounded-full overflow-hidden border-[3px] border-[#F59E0B] shadow-sm shrink-0">
+        <div className={isDrawer ? 'flex items-center gap-3 px-3 py-2' : ''}>
+          <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden shrink-0">
             <img
               src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
               alt="Profile"
@@ -111,35 +112,35 @@ export function ChatSidebar() {
       {/* Logo */}
       <div className="mb-8">
         <div className="w-[52px] h-[52px] bg-[#2D9B98] rounded-full flex items-center justify-center shadow-sm">
-          <RefreshCw className="w-6 h-6 text-white" strokeWidth={2.5} />
+          <LogoIcon className="w-6 h-6" />
         </div>
       </div>
     
       {/* Navigation Icons */}
       <div className="flex-1 flex flex-col gap-6 mt-1">
         <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-800 hover:text-gray-900 transition-colors">
-          <Home className="w-[22px] h-[22px]" fill="currentColor" strokeWidth={0} />
+          <HomeIcon className="w-5 h-5" />
         </button>
-        <button className="w-[52px] h-[52px] flex items-center justify-center text-[#2D9B98] bg-[#E0F2F1] rounded-[18px] transition-colors">
-          <MessageSquare className="w-[24px] h-[24px]" strokeWidth={2} />
-        </button>
-        <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors">
-          <Compass className="w-[22px] h-[22px]" strokeWidth={2} />
+        <button className="w-[44px] h-[44px] flex items-center justify-center text-[#1E9A80] bg-[#F0FDF4] border border-[#1E9A80] rounded-lg transition-colors">
+          <ChatIcon className="w-5 h-5" />
         </button>
         <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors">
-          <Folder className="w-[22px] h-[22px]" strokeWidth={2} />
+          <CompassIcon className="w-5 h-5" />
         </button>
         <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors">
-          <ImageIcon className="w-[22px] h-[22px]" strokeWidth={2} />
+          <FolderIcon className="w-5 h-5" />
+        </button>
+        <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors">
+          <ImageIcon className="w-5 h-5" />
         </button>
       </div>
 
       {/* Bottom Section */}
       <div className="flex flex-col gap-6 items-center mb-2">
         <button className="w-[44px] h-[44px] flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors">
-          <Sparkles className="w-[22px] h-[22px]" strokeWidth={2} />
+          <SparklesIcon className="w-5 h-5" />
         </button>
-        <div className="w-[48px] h-[48px] rounded-full overflow-hidden border-[3px] border-[#F59E0B] shadow-sm">
+        <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
           <img 
             src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
             alt="Profile"

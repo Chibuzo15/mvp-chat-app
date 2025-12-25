@@ -1,6 +1,7 @@
 'use client'
 
-import { Plus, Search, MessageSquare, Archive, CheckCheck, Filter, X } from 'lucide-react'
+import { CheckCheck, X } from 'lucide-react'
+import { PenIcon, SearchIcon, FilterIcon, MessageMenuIcon, ArchiveIcon } from '@/components/icons'
 import { RefObject } from 'react'
 
 interface User {
@@ -68,7 +69,7 @@ export function ConversationsList({
 }: ConversationsListProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200">
+      <div className="px-6 pt-4 pb-0">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">All Message</h2>
           <div className="relative">
@@ -77,7 +78,7 @@ export function ConversationsList({
               onClick={onToggleNewMessage}
               className="flex items-center gap-2 px-3 py-1.5 bg-[#2D9B98] hover:bg-[#268784] text-white text-sm font-medium rounded-lg transition-colors"
             >
-              <Plus className="w-4 h-4" />
+              <PenIcon className="w-4 h-4" />
               New Message
             </button>
             
@@ -93,7 +94,7 @@ export function ConversationsList({
                 
                 <div className="px-4 py-3 border-b border-gray-200">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
                       placeholder="Search name or email"
@@ -105,7 +106,7 @@ export function ConversationsList({
                 <div className="max-h-80 overflow-y-auto">
                   {users.length === 0 ? (
                     <div className="py-8 text-center text-gray-400">
-                      <MessageSquare className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                      <MessageMenuIcon className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                       <p className="text-xs">No users available</p>
                     </div>
                   ) : (
@@ -144,36 +145,38 @@ export function ConversationsList({
         </div>
       </div>
       
-      <div className="px-4 py-3">
-        <div className="relative flex items-center">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search in message"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="flex-1 pl-9 pr-10 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
-              title="Clear search"
-            >
-              <X className="w-4 h-4 text-gray-600" strokeWidth={2} />
-            </button>
-          )}
+      <div className="px-6 py-3">
+        <div className="relative flex items-center gap-2">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#262626]" />
+            <input
+              type="text"
+              placeholder="Search in message"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors placeholder:text-[#262626] text-[#262626]"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => onSearchChange('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Clear search"
+              >
+                <X className="w-4 h-4 text-gray-600" strokeWidth={2} />
+              </button>
+            )}
+          </div>
           {!searchQuery && (
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors">
-            <Filter className="w-4 h-4 text-gray-600" strokeWidth={2} />
+          <button className="w-9 h-9 flex items-center justify-center border border-[#E8E5DF] bg-white rounded-lg hover:bg-gray-50 transition-colors">
+            <FilterIcon className="w-4 h-4 text-[#262626]" />
           </button>
           )}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-4 px-6">
         {sessions.length === 0 && users.length > 0 && (
-          <div className="p-6 text-center text-gray-500">
+          <div className="py-6 text-center text-gray-500">
             <p className="text-sm">No conversations yet</p>
             <p className="text-xs mt-1">Start a new message to begin chatting</p>
           </div>
@@ -182,7 +185,7 @@ export function ConversationsList({
         {sessions.map(session => (
           <div
             key={session.id}
-            className="relative overflow-hidden select-none"
+            className="relative overflow-hidden select-none mb-2"
             onTouchStart={(e) => onTouchStart(e, session.id)}
             onTouchMove={onTouchMove}
             onTouchEnd={() => onTouchEnd(session.id)}
@@ -193,24 +196,24 @@ export function ConversationsList({
           >
             {/* Left Swipe Action (Unread) */}
             <div
-              className={`absolute left-0 top-0 bottom-0 flex items-center transition-transform duration-200 ${
+              className={`absolute left-0 top-0 bottom-0 flex items-center pl-2 transition-transform duration-200 ${
                 swipedSession === `${session.id}-right` ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
-              <button className="h-full px-6 bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 min-w-[80px] rounded-2xl">
-                <MessageSquare className="w-5 h-5" strokeWidth={2} />
+              <button className="w-[70px] h-[70px] bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 rounded-[12px]">
+                <MessageMenuIcon className="w-5 h-5 text-white" />
                 <span className="text-xs font-medium">Unread</span>
               </button>
             </div>
 
             {/* Right Swipe Action (Archive) */}
             <div
-              className={`absolute right-0 top-0 bottom-0 flex items-center justify-end transition-transform duration-200 ${
+              className={`absolute right-0 top-0 bottom-0 flex items-center justify-end pr-2 transition-transform duration-200 ${
                 swipedSession === `${session.id}-left` ? 'translate-x-0' : 'translate-x-full'
               }`}
             >
-              <button className="h-full px-6 bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 min-w-[80px] rounded-2xl">
-                <Archive className="w-5 h-5" strokeWidth={2} />
+              <button className="w-[70px] h-[70px] bg-[#3BA395] text-white flex flex-col items-center justify-center gap-1 rounded-[12px]">
+                <ArchiveIcon className="w-5 h-5 text-white" />
                 <span className="text-xs font-medium">Archive</span>
               </button>
             </div>
@@ -224,13 +227,13 @@ export function ConversationsList({
                 }
               }}
               onContextMenu={(e) => onContextMenu(e, session)}
-              className={`flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 relative ${
+              className={`flex items-start gap-3 h-[70px] px-4 py-4 cursor-pointer transition-all duration-200 relative ${
                 selectedSession?.id === session.id || swipedSession?.startsWith(session.id) 
-                  ? 'bg-gray-100' 
+                  ? 'bg-gray-100 rounded-[12px]' 
                   : 'bg-white hover:bg-gray-50'
               } ${
-                swipedSession === `${session.id}-left` ? '-translate-x-24' : 
-                swipedSession === `${session.id}-right` ? 'translate-x-24' : 
+                swipedSession === `${session.id}-left` ? '-translate-x-[85px]' : 
+                swipedSession === `${session.id}-right` ? 'translate-x-[85px]' : 
                 'translate-x-0'
               }`}
             >

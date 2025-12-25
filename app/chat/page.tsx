@@ -942,7 +942,7 @@ export default function ChatPage() {
 
   return (
     <>
-      <div className="flex min-h-screen h-[100dvh] bg-[#F5F3F0]">
+      <div className="flex min-h-screen h-[100dvh] bg-[#F3F3EE]">
         <ChatSidebar />
         <ChatSidebarDrawer open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
@@ -1023,7 +1023,7 @@ export default function ChatPage() {
                     }}
                   />
 
-                  <div className="flex-1 overflow-y-auto px-3 sm:px-8 py-4 sm:py-6 space-y-4 bg-[#F5F3F0] rounded-md">
+                  <div className="flex-1 overflow-y-auto px-6 py-4 sm:py-6 space-y-4 bg-[#F3F3EE] rounded-[16px]">
                     <ChatMessages
                       key={`msgs-${selectedSession?.id}-${readReceiptTrigger}`}
                       messages={messages}

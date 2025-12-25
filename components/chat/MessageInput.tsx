@@ -1,4 +1,4 @@
-import { Send, Smile, Paperclip, Mic } from 'lucide-react'
+import { SendIcon, EmojiIcon, AttachmentIcon, MicrophoneIcon } from '@/components/icons'
 
 interface MessageInputProps {
   messageInput: string
@@ -29,33 +29,33 @@ export function MessageInput({ messageInput, onMessageChange, onSendMessage }: M
 
         <button
           type="button"
-          className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors"
+          className="w-9 h-9 flex items-center justify-center text-[#262626] hover:text-gray-800 transition-colors"
           aria-label="Voice"
         >
-          <Mic className="w-5 h-5" strokeWidth={2} />
+          <MicrophoneIcon className="w-5 h-5" />
         </button>
         <button
           type="button"
-          className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors"
+          className="w-9 h-9 flex items-center justify-center text-[#262626] hover:text-gray-800 transition-colors"
           aria-label="Emoji"
         >
-          <Smile className="w-5 h-5" strokeWidth={2} />
+          <EmojiIcon className="w-5 h-5" />
         </button>
         <button
           type="button"
-          className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors"
+          className="w-9 h-9 flex items-center justify-center text-[#262626] hover:text-gray-800 transition-colors"
           aria-label="Attach"
         >
-          <Paperclip className="w-5 h-5" strokeWidth={2} />
+          <AttachmentIcon className="w-5 h-5" />
         </button>
 
         <button
           onClick={onSendMessage}
           disabled={!messageInput.trim()}
-          className="w-10 h-10 flex items-center justify-center bg-[#2D9B98] hover:bg-[#268784] text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-10 h-10 flex items-center justify-center bg-[#1E9A80] hover:bg-[#1a8670] text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Send"
         >
-          <Send className="w-5 h-5" strokeWidth={2} fill="white" />
+          <SendIcon className="w-5 h-5 text-white" />
         </button>
       </div>
     </div>

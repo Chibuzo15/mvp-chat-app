@@ -1,4 +1,5 @@
-import { Check, CheckCheck } from 'lucide-react'
+import { Check } from 'lucide-react'
+import { DoubleCheckIcon } from '@/components/icons'
 import { RefObject } from 'react'
 
 function renderInlineMarkdown(text: string): React.ReactNode[] {
@@ -223,7 +224,7 @@ export function ChatMessages({
         <div key={groupIndex}>
           {/* Date Divider */}
           <div className="flex items-center justify-center my-6">
-            <div className="px-4 py-1 bg-gray-100 rounded-full">
+            <div className="px-4 py-1 bg-white rounded-full">
               <span className="text-xs font-medium text-gray-500">{group.date}</span>
             </div>
           </div>
@@ -256,9 +257,8 @@ export function ChatMessages({
                     isPending ? (
                       <Check className="w-3.5 h-3.5 text-gray-400" strokeWidth={2} />
                     ) : (
-                      <CheckCheck
-                        className={`w-3.5 h-3.5 ${isRead ? 'text-[#2D9B98]' : 'text-gray-400'}`}
-                        strokeWidth={2}
+                      <DoubleCheckIcon
+                        className={`w-3.5 h-3.5 ${isRead ? 'text-[#1E9A80]' : 'text-gray-400'}`}
                       />
                     )
                   )}

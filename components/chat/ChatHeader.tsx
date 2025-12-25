@@ -1,4 +1,5 @@
-import { ChevronLeft, Phone, Video, MoreVertical } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
+import { PhoneIcon, VideoCallIcon, MoreOptionsIcon, SearchIcon } from '@/components/icons'
 
 interface User {
   id: string
@@ -16,7 +17,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ user, isOnline, isTyping, onToggleContactInfo, onBack }: ChatHeaderProps) {
   return (
-    <div className="bg-white px-6 py-4 flex items-center justify-between shrink-0">
+    <div className="bg-white px-4 py-4 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-3">
         {onBack && (
           <button
@@ -53,17 +54,20 @@ export function ChatHeader({ user, isOnline, isTyping, onToggleContactInfo, onBa
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors">
-          <Phone className="w-5 h-5 text-gray-700" />
+        <button className="w-9 h-9 flex items-center justify-center border border-[#E8E5DF] bg-white rounded-lg hover:bg-gray-50 transition-colors">
+          <SearchIcon className="w-4 h-4 text-[#262626]" />
         </button>
-        <button className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors">
-          <Video className="w-5 h-5 text-gray-700" />
+        <button className="w-9 h-9 flex items-center justify-center border border-[#E8E5DF] bg-white rounded-lg hover:bg-gray-50 transition-colors">
+          <PhoneIcon className="w-4 h-4 text-[#262626]" />
+        </button>
+        <button className="w-9 h-9 flex items-center justify-center border border-[#E8E5DF] bg-white rounded-lg hover:bg-gray-50 transition-colors">
+          <VideoCallIcon className="w-4 h-4 text-[#262626]" />
         </button>
         <button
           onClick={onToggleContactInfo}
-          className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+          className="w-9 h-9 flex items-center justify-center border border-[#E8E5DF] bg-white rounded-lg hover:bg-gray-50 transition-colors"
         >
-          <MoreVertical className="w-5 h-5 text-gray-700" />
+          <MoreOptionsIcon className="w-4 h-4 text-[#262626]" />
         </button>
       </div>
     </div>
